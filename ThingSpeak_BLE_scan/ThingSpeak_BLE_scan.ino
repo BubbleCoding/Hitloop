@@ -10,13 +10,13 @@ int scanTime = 5;  //In seconds
 BLEScan *pBLEScan;
 
 float BLEStrength = 0;
-const char* ssid = "bubble";   // your network SSID (name) 
-const char* password = "yahWifiwoop";   // your network password
+const char* ssid = "XXXXXXXX";   // your network SSID (name) 
+const char* password = "XXXXXXXXX";   // your network password
 
 WiFiClient  client;
 
 unsigned long myChannelNumber = 1;
-const char * myWriteAPIKey = "XWFHIZUBQEQQ7IM8";
+const char * myWriteAPIKey = "XXXXXXXXXXXXXXXXXX"; //Change this to your API key 
 
 // Timer variables
 unsigned long lastTime = 0;
