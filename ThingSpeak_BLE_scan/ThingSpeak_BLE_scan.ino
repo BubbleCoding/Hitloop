@@ -3,12 +3,8 @@
 #include "ThingSpeak.h"
 
 #include <BLEDevice.h>
-#include <BLEUtils.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
-#include <BLEEddystoneURL.h>
-#include <BLEEddystoneTLM.h>
-#include <BLEBeacon.h>
 
 int scanTime = 5;  //In seconds
 BLEScan *pBLEScan;
@@ -60,8 +56,12 @@ void setup() {
 
 
 void loop() {
-  
+  wifisend();
+  BLEsend();
+}
 
+
+void wifisend() {
   if ((millis() - lastTime) > timerDelay) {
     
     // Connect or reconnect to WiFi
@@ -78,8 +78,6 @@ void loop() {
     // Write to ThingSpeak. There are up to 8 fields in a channel, allowing you to store up to 8 different
     // pieces of information in a channel.  Here, we write to field 1.
     int x = ThingSpeak.writeField(myChannelNumber, 1, BLEStrength, myWriteAPIKey);
-    //uncomment if you want to get temperature in Fahrenheit
-    //int x = ThingSpeak.writeField(myChannelNumber, 1, temperatureF, myWriteAPIKey);
 
     if(x == 200){
       Serial.println("Channel update successful.");
@@ -96,8 +94,9 @@ void loop() {
     // Wait a bit before scanning again.
     delay(3000);
   }
+}
 
-
+void BLEsend(){
   BLEScanResults *foundDevices = pBLEScan->start(scanTime, false);
   // Serial.print("Devices found: ");
   // Serial.println(foundDevices->getCount());
