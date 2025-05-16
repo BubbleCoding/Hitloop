@@ -113,6 +113,7 @@ void setup() {
   Serial.flush();
 
   BLEDevice::init(DEVICE_NAME);
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 

@@ -27,6 +27,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
     if (advertisedDevice.getName() == "ESP32-2"){
       Serial.print(F("ESP32-1 strength: "));
       BLEStrength = advertisedDevice.getRSSI();
+      BLEdeviceName = advertisedDevice.getName();
       Serial.println(advertisedDevice.getRSSI());
       Serial.print(F(""));
     }
