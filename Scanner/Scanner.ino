@@ -17,8 +17,8 @@ BLEScan* pBLEScan;
 String Data = "";
 int devCounter = 0;
 
-const char* ssid = "Rover";
-const char* password = "SMisgoed";
+const char* ssid = "XXXXXX";
+const char* password = "XXXXXX";
 const char* serverUrl = "http://192.168.1.165:5000/data";
 const char* name = "Scanner-1";
 
