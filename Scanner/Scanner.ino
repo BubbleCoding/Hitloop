@@ -1,3 +1,10 @@
+/* 
+Deze code moet:
+BLE ontvangen van de beacons.                             |Check
+De RSSI en de naam van de beacon naar de server sturen.   |Check
+Data ontvangen van de server.                             |
+Commands van de server uitvoeren.                         |
+*/
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <BLEDevice.h>
@@ -10,17 +17,17 @@ BLEScan* pBLEScan;
 String Data = "";
 int devCounter = 0;
 
-const char* ssid = "XXXXXXXXXXX";
-const char* password = "XXXXXXXXXXX";
+const char* ssid = "Rover";
+const char* password = "SMisgoed";
 const char* serverUrl = "http://192.168.1.165:5000/data";
-const char* name = "Beacon-1";
+const char* name = "Scanner-1";
 
 // Format a single device's data into JSON using the UUID
-String jsonDataMaker(String UUID, float BLEstrength, String BLEname) {
+String jsonDataMaker(String UUID, float BLEstrength, String BeaconName) {
   devCounter++;
   String jsonData = "\"" + UUID + "\": {";  // Use UUID as device ID
   jsonData += "\"RSSI\": " + String(BLEstrength, 1) + ",";
-  jsonData += "\"BLE device name\": \"" + BLEname + "\"";
+  jsonData += "\"Beacon name\": \"" + BeaconName + "\"";
   jsonData += "},";
   return jsonData;
 }
@@ -32,7 +39,7 @@ String jsonDataFixer(String rawData) {
   }
   String jsonData = "{";
   jsonData += rawData;
-  jsonData += ",\"Beacon name\": \"" + String(name) + "\"";
+  jsonData += ",\"Scanner name\": \"" + String(name) + "\"";
   jsonData += "}";
   return jsonData;
 }
@@ -42,16 +49,16 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     if (advertisedDevice.haveName() && advertisedDevice.getName().startsWith("ESP32")) {
       float rssi = advertisedDevice.getRSSI();
-      String devName = advertisedDevice.getName();
+      String BeaconName = advertisedDevice.getName();
       String uuid = advertisedDevice.getAddress().toString();  // Get the device's MAC address as UUID
       
-      Serial.print(devName);
+      Serial.print(BeaconName);
       Serial.print(" RSSI: ");
       Serial.println(rssi);
       Serial.print(" UUID (MAC Address): ");
       Serial.println(uuid);
       
-      Data += jsonDataMaker(uuid, rssi, devName);  // Use UUID as device key
+      Data += jsonDataMaker(uuid, rssi, BeaconName);  // Use UUID as device key
     }
   }
 };
@@ -81,6 +88,7 @@ void setup() {
 void loop() {
   BLEscan();
   wifiDataSender();
+  wifiReceiveData();
 }
 
 void BLEscan() {
@@ -119,4 +127,8 @@ void wifiDataSender() {
     Serial.println("WiFi not connected");
   }
   delay(3000);
+}
+
+void wifiReceiveData(){
+  return;
 }
