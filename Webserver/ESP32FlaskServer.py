@@ -22,35 +22,54 @@ def RSSI_to_distance(RSSI):
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
+    scanner_id = data.get("Scanner name")
+    beacons_payload = data.get("beacons") # Expect a 'beacons' object in the payload
+
+    if not scanner_id:
+        return jsonify({"status": "error", "message": "Missing 'Scanner name' in payload"}), 400
     
-    # Check for Beacon name and remove from the device data
-    beacon_name = data.get("Scanner name")
-    if beacon_name:
-        del data["Scanner name"]
+    if not isinstance(beacons_payload, dict):
+        return jsonify({"status": "error", "message": "'beacons' field must be an object"}), 400
+
+    # Initialize scanner entry if it's new
+    if scanner_id not in devices_data:
+        devices_data[scanner_id] = {
+            "beacons_observed": {}
+        }
     
-    # Iterate over devices in the received data
-    for device_id, device_info in data.items():
-        rssi = device_info.get("RSSI")
-        beacon_name = device_info.get("Beacon name")
+    # Update timestamp for the scanner
+    devices_data[scanner_id]["timestamp"] = datetime.utcnow().isoformat()
+
+    # Process each beacon reported by the scanner
+    for beacon_key, beacon_info in beacons_payload.items():
+        rssi = beacon_info.get("RSSI")
+        beacon_name = beacon_info.get("Beacon name")
         
         if rssi is None or beacon_name is None:
-            return jsonify({"status": "error", "message": f"Missing data for {device_id}"}), 400
+            print(f"Warning: Missing RSSI or Beacon name for beacon '{beacon_key}' from scanner '{scanner_id}'")
+            continue  # Skip this beacon if data is incomplete
         
-        # Store or update device data
-        devices_data[device_id] = {
+        devices_data[scanner_id]["beacons_observed"][beacon_key] = {
             "rssi": rssi,
             "beacon_name": beacon_name,
-            "timestamp": datetime.utcnow().isoformat(),
-            "distance" : RSSI_to_distance(rssi)
+            "distance": RSSI_to_distance(rssi) # Calculate distance based on RSSI
         }
+        # print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}")
 
-        print(f"Updated data for {device_id}: RSSI={rssi}, BLE Name={beacon_name}")
-
+    # print(f"Updated data for {scanner_id}: {devices_data[scanner_id]}")
     return jsonify({"status": "success"}), 200
 
 @app.route('/')
 def index():
     return render_template('index.html', devices=devices_data)
+
+@app.route('/devices', methods=['GET'])
+def get_all_devices():
+    return jsonify(devices_data)
+
+@app.route('/simulation')
+def simulation_page():
+    return render_template('simulation.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
