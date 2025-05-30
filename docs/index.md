@@ -48,6 +48,7 @@ Bill of materials:
 ### Pins
 
 |Pin|Function|
+|-|-|
 |XIAO PIN| Function|
 |D0| Motor driver|
 |D1| WS2812b Data In|
