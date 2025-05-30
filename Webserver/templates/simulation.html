@@ -19,6 +19,12 @@
             <!-- p5.js canvas will be attached here -->
         </div>
     </div>
-    <script src="{{ url_for('static', filename='js/simulation.js') }}"></script>
+
+    <!-- Order of these scripts is important! -->
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/Beacon.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/Scanner.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/simulation.js') }}"></script> <!-- Main logic last -->
 </body>
 </html> 
