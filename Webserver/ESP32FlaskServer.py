@@ -71,7 +71,7 @@ def get_all_devices():
 def simulation_page():
     return render_template('simulation.html')
 
-@app.route('/reset_devices', methods=['POST'])
+@app.route('/reset_devices', methods=['GET'])
 def reset_devices_data():
     global devices_data
     devices_data.clear()
