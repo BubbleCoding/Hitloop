@@ -23,40 +23,55 @@ def RSSI_to_distance(RSSI):
 def receive_data():
     data = request.json
     scanner_id = data.get("Scanner name")
-    beacons_payload = data.get("beacons") # Expect a 'beacons' object in the payload
+    beacons_payload = data.get("beacons")
+    movement_payload = data.get("movement") # Get the new movement data
 
     if not scanner_id:
         return jsonify({"status": "error", "message": "Missing 'Scanner name' in payload"}), 400
     
-    if not isinstance(beacons_payload, dict):
-        return jsonify({"status": "error", "message": "'beacons' field must be an object"}), 400
+    # beacons_payload can be an empty dict if no beacons are seen, which is fine.
+    # movement_payload can be 0 or a positive number.
 
-    # Initialize scanner entry if it's new
     if scanner_id not in devices_data:
         devices_data[scanner_id] = {
-            "beacons_observed": {}
+            "beacons_observed": {},
+            # Initialize movement for new scanners, can be overwritten if payload has it
+            "movement": 0 
         }
     
-    # Update timestamp for the scanner
     devices_data[scanner_id]["timestamp"] = datetime.utcnow().isoformat()
+    
+    # Update movement if present in payload
+    if movement_payload is not None: # Check if movement data was sent
+        devices_data[scanner_id]["movement"] = movement_payload
+    elif "movement" not in devices_data[scanner_id]: # Ensure it has a default if never sent
+        devices_data[scanner_id]["movement"] = 0
 
-    # Process each beacon reported by the scanner
-    for beacon_key, beacon_info in beacons_payload.items():
-        rssi = beacon_info.get("RSSI")
-        beacon_name = beacon_info.get("Beacon name")
-        
-        if rssi is None or beacon_name is None:
-            print(f"Warning: Missing RSSI or Beacon name for beacon '{beacon_key}' from scanner '{scanner_id}'")
-            continue  # Skip this beacon if data is incomplete
-        
-        devices_data[scanner_id]["beacons_observed"][beacon_key] = {
-            "rssi": rssi,
-            "beacon_name": beacon_name,
-            "distance": RSSI_to_distance(rssi) # Calculate distance based on RSSI
-        }
-        print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}")
+    # Process beacons if the payload exists and is a dictionary
+    if isinstance(beacons_payload, dict):
+        # Clear previous beacons for this scanner before adding new ones for this update, 
+        # or only update existing ones if preferred.
+        # For simplicity, let's assume the payload is the complete current view of beacons.
+        # devices_data[scanner_id]["beacons_observed"].clear() # Optional: if payload is always exhaustive
 
-    # print(f"Updated data for {scanner_id}: {devices_data[scanner_id]}")
+        for beacon_key, beacon_info in beacons_payload.items():
+            rssi = beacon_info.get("RSSI")
+            beacon_name = beacon_info.get("Beacon name")
+            
+            if rssi is None or beacon_name is None:
+                print(f"Warning: Missing RSSI or Beacon name for beacon '{beacon_key}' from scanner '{scanner_id}'")
+                continue
+            
+            devices_data[scanner_id]["beacons_observed"][beacon_key] = {
+                "rssi": rssi,
+                "beacon_name": beacon_name,
+                "distance": RSSI_to_distance(rssi)
+            }
+            print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}, Movement: {devices_data[scanner_id].get('movement')}")
+    else:
+        # If beacons_payload is not a dict (e.g. not present), we still might have movement data to log
+        print(f"Scanner {scanner_id} reported movement: {devices_data[scanner_id].get('movement')} (No beacon data in this payload or invalid format)")
+
     return jsonify({"status": "success"}), 200
 
 @app.route('/')

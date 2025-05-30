@@ -34,7 +34,8 @@ function fetchAndUpdateScanners() {
             sortedBeaconColumns.forEach(beaconCol => {
                 tableHtml += `<th>${beaconCol.name} (RSSI)</th>`;
             });
-            tableHtml += '<th>Last Update</th></tr></thead><tbody>'; // Added Last Update column for scanner
+            // Add Movement and Last Update columns to the header
+            tableHtml += '<th>Movement (px)</th><th>Last Update</th></tr></thead><tbody>'; 
 
             // Add scanner rows
             for (const scannerId of Object.keys(scannersData).sort()) { // Sort scanner IDs for consistent row order
@@ -48,6 +49,11 @@ function fetchAndUpdateScanners() {
                     }
                     tableHtml += `<td>${rssiValue}</td>`;
                 });
+                
+                // Add movement data for the scanner
+                let movementValue = scannerInfo.movement !== undefined ? scannerInfo.movement.toFixed(1) : '-';
+                tableHtml += `<td>${movementValue}</td>`;
+                
                 // Add scanner's last update time
                 tableHtml += `<td>${new Date(scannerInfo.timestamp).toLocaleTimeString()}</td>`;
                 tableHtml += '</tr>';

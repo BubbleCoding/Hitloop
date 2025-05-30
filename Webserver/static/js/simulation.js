@@ -73,7 +73,6 @@ function initializeScanners() {
 }
 
 function resetAndRespawnScanners() {
-    // Update cfg from slider value before re-initializing
     cfg.numScanners = numScannersSlider.value();
     numScannersLabel.html(`Number of Scanners: ${cfg.numScanners}`);
 
@@ -81,11 +80,12 @@ function resetAndRespawnScanners() {
         .then(response => response.json())
         .then(data => {
             console.log('Reset devices API response:', data);
-            initializeScanners(); // Re-initialize scanners after API call confirmation (optional)
+            // initializeScanners(); // Was previously here in some versions, now called below
         })
         .catch(error => console.error('Error resetting devices:', error));
     
-    initializeScanners(); // Or re-initialize immediately if preferred
+    initializeScanners(); // Creates new scanner instances
+    sendAllScannersData(); // Immediately send data for newly created scanners
 }
 
 function initializeUI() {
@@ -174,6 +174,8 @@ class Scanner {
     constructor(id, x, y) {
         this.id = id;
         this.pos = createVector(x, y);
+        this.lastPosForMovement = this.pos.copy(); // Store initial position for movement calc
+        this.movementSinceLastSend = 0;
         this.vel = createVector(random(-cfg.scannerInitialVelMagnitude, cfg.scannerInitialVelMagnitude), 
                                 random(-cfg.scannerInitialVelMagnitude, cfg.scannerInitialVelMagnitude));
         this.maxSpeed = cfg.scannerMaxSpeed;
@@ -182,14 +184,15 @@ class Scanner {
     }
 
     update() {
-        // Add slight random change to velocity
+        let prevPos = this.pos.copy(); // Position before current frame's movement
+
         this.vel.add(createVector(random(-cfg.scannerVelChangeMagnitude, cfg.scannerVelChangeMagnitude), 
                                   random(-cfg.scannerVelChangeMagnitude, cfg.scannerVelChangeMagnitude)));
-        // Limit speed
-        this.vel.limit(this.maxSpeed); // this.maxSpeed is updated by slider
-
-        // Update position
+        this.vel.limit(this.maxSpeed);
         this.pos.add(this.vel);
+
+        // Accumulate distance moved this frame
+        this.movementSinceLastSend += p5.Vector.dist(this.pos, prevPos);
 
         // Bounce off edges
         if (this.pos.x - this.size / 2 < 0 || this.pos.x + this.size / 2 > cfg.canvasWidth) {
@@ -205,10 +208,14 @@ class Scanner {
     detectAndSendData() {
         let payload = {
             "Scanner name": this.id,
+            "movement": parseFloat(this.movementSinceLastSend.toFixed(2)), // Include movement
             "beacons": {}
         };
-        let beaconsDetected = 0;
+        // Reset movement for the next interval AFTER it's added to payload
+        this.movementSinceLastSend = 0;
+        // this.lastPosForMovement = this.pos.copy(); // Update lastPos after sending data
 
+        let beaconsDetected = 0;
         beacons.forEach(beacon => {
             let d = dist(this.pos.x, this.pos.y, beacon.pos.x, beacon.pos.y);
             let rssi = distanceToRSSI(d);
@@ -219,7 +226,7 @@ class Scanner {
             beaconsDetected++;
         });
 
-        if (beaconsDetected > 0) {
+        if (beaconsDetected > 0 || payload.hasOwnProperty('movement')) { // Send if beacons or just movement data
             fetch('/data', {
                 method: 'POST',
                 headers: {
