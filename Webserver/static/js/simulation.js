@@ -235,4 +235,18 @@ function draw() {
             ellipse(beacon.pos.x, beacon.pos.y, d * 2, d * 2); // d is radius, ellipse takes diameter
         });
     });
+}
+
+function mousePressed() {
+    // Check if the click is within the canvas boundaries
+    if (mouseX >= 0 && mouseX <= cfg.canvasWidth && mouseY >= 0 && mouseY <= cfg.canvasHeight) {
+        // Check if there is at least one scanner
+        if (scanners.length > 0 && scanners[0]) {
+            scanners[0].pos.x = mouseX;
+            scanners[0].pos.y = mouseY;
+            // Optionally, reset its velocity so it doesn't immediately fly off
+           // scanners[0].vel.mult(0); // Resets velocity to (0,0)
+            // console.log(`Moved scanner ${scanners[0].id} to (${mouseX}, ${mouseY})`);
+        }
+    }
 } 
