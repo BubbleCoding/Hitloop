@@ -1,6 +1,31 @@
-const NUM_SCANNERS = 10;
-const NUM_BEACONS = 4;
-const DATA_SEND_INTERVAL_MS = 5000; // Interval to send data for each scanner
+const cfg = {
+    numScanners: 10,
+    // numBeacons: 4, // Beacons are now hardcoded to corners
+    dataSendIntervalMs: 5000,
+
+    canvasWidth: 800,
+    canvasHeight: 600,
+    backgroundColor: 230,
+
+    beaconRadius: 10,
+    beaconColor: [255, 0, 0, 150], // [R, G, B, Alpha]
+    beaconMargin: 30,
+
+    scannerSize: 15,
+    scannerColor: [0, 0, 255, 150], // [R, G, B, Alpha]
+    scannerInitialVelMagnitude: 1, // For random(-val, val)
+    scannerMaxSpeed: 2,
+    scannerVelChangeMagnitude: 0.05, // For random(-val, val)
+
+    // RSSI simulation parameters
+    rssiAtMinDist: -30,         // RSSI at very close distance (e.g., 0-1 units)
+    rssiAtEffectiveMaxDist: -90, // RSSI at an effective maximum calculation distance
+    // effectiveDistance is Math.min(distance, maxDist / 2)
+    // The '0' in map(effectiveDistance, 0, maxDist/2, ...) refers to the start of the input range for map.
+};
+
+// const NUM_SCANNERS = 10; // Moved to cfg.numScanners
+// const DATA_SEND_INTERVAL_MS = 5000; // Moved to cfg.dataSendIntervalMs
 
 let scanners = [];
 let beacons = [];
@@ -15,22 +40,22 @@ function distanceToRSSI(distance) {
     // We'll cap distance for RSSI calculation to avoid extremely low/high values if beacons are too close/far.
     let effectiveDistance = Math.min(distance, maxDist / 2); 
     
-    let rssi = map(effectiveDistance, 0, maxDist / 2, -30, -90);
+    let rssi = map(effectiveDistance, 0, maxDist / 2, cfg.rssiAtMinDist, cfg.rssiAtEffectiveMaxDist);
     return Math.round(rssi); // Return integer RSSI
 }
 
 // --- Beacon Class ---
 class Beacon {
-    constructor(id, x, y) {
-        this.id = id; // e.g., "Beacon-1"
-        this.name = `Beacon ${id.split('-')[1]}`; // e.g., "Beacon 1" for display/API
+    constructor(id, name, x, y) {
+        this.id = id; // e.g., "beacon-NW"
+        this.name = name; // e.g., "NW"
         this.pos = createVector(x, y);
-        this.radius = 10;
-        this.color = color(255, 0, 0, 150); // Reddish
+        this.radius = cfg.beaconRadius;
+        this.colorVal = color(...cfg.beaconColor);
     }
 
     display() {
-        fill(this.color);
+        fill(this.colorVal);
         noStroke();
         ellipse(this.pos.x, this.pos.y, this.radius * 2);
         fill(0);
@@ -44,14 +69,38 @@ class Scanner {
     constructor(id, x, y) {
         this.id = id; // e.g., "Scanner-A"
         this.pos = createVector(x, y);
-        this.size = 15;
-        this.color = color(0, 0, 255, 150); // Bluish
+        this.vel = createVector(random(-cfg.scannerInitialVelMagnitude, cfg.scannerInitialVelMagnitude), 
+                                random(-cfg.scannerInitialVelMagnitude, cfg.scannerInitialVelMagnitude)); // Initial velocity
+        this.maxSpeed = cfg.scannerMaxSpeed; // Maximum speed
+        this.size = cfg.scannerSize;
+        this.colorVal = color(...cfg.scannerColor);
 
         // Send data at staggered intervals for each scanner
         setTimeout(() => {
             this.detectAndSendData(); // Initial send
-            setInterval(() => this.detectAndSendData(), DATA_SEND_INTERVAL_MS);
-        }, Math.random() * DATA_SEND_INTERVAL_MS); // Stagger initial sends
+            setInterval(() => this.detectAndSendData(), cfg.dataSendIntervalMs);
+        }, Math.random() * cfg.dataSendIntervalMs); // Stagger initial sends
+    }
+
+    update() {
+        // Add slight random change to velocity
+        this.vel.add(createVector(random(-cfg.scannerVelChangeMagnitude, cfg.scannerVelChangeMagnitude), 
+                                  random(-cfg.scannerVelChangeMagnitude, cfg.scannerVelChangeMagnitude)));
+        // Limit speed
+        this.vel.limit(this.maxSpeed);
+
+        // Update position
+        this.pos.add(this.vel);
+
+        // Bounce off edges
+        if (this.pos.x - this.size / 2 < 0 || this.pos.x + this.size / 2 > width) {
+            this.pos.x = constrain(this.pos.x, this.size / 2, width - this.size / 2); // Prevent sticking
+            this.vel.x *= -1;
+        }
+        if (this.pos.y - this.size / 2 < 0 || this.pos.y + this.size / 2 > height) {
+            this.pos.y = constrain(this.pos.y, this.size / 2, height - this.size / 2); // Prevent sticking
+            this.vel.y *= -1;
+        }
     }
 
     detectAndSendData() {
@@ -96,30 +145,44 @@ class Scanner {
     }
 
     display() {
-        fill(this.color);
+        fill(this.colorVal);
         noStroke();
         rectMode(CENTER);
         rect(this.pos.x, this.pos.y, this.size, this.size);
         fill(0);
         textAlign(CENTER, CENTER);
-        text(this.id, this.pos.x, this.pos.y - this.size);
+        text(this.id, this.pos.x, this.pos.y - this.size - 5);
     }
 }
 
 function setup() {
-    createCanvas(800, 600);
-    
-    // Initialize Beacons
-    for (let i = 0; i < NUM_BEACONS; i++) {
-        beacons.push(new Beacon(
-            `beacon-${i + 1}`, // Unique ID
-            random(width * 0.2, width * 0.8), 
-            random(height * 0.2, height * 0.8)
-        ));
-    }
+    createCanvas(cfg.canvasWidth, cfg.canvasHeight);
+    const margin = cfg.beaconMargin; // Margin from canvas edges for beacon placement
+
+    // Initialize Beacons in corners
+    beacons.push(new Beacon(
+        `beacon-NW`, "NW",
+        margin, 
+        margin
+    ));
+    beacons.push(new Beacon(
+        `beacon-NE`, "NE",
+        width - margin, 
+        margin
+    ));
+    beacons.push(new Beacon(
+        `beacon-SW`, "SW",
+        margin, 
+        height - margin
+    ));
+    beacons.push(new Beacon(
+        `beacon-SE`, "SE",
+        width - margin, 
+        height - margin
+    ));
 
     // Initialize Scanners
-    for (let i = 0; i < NUM_SCANNERS; i++) {
+    for (let i = 0; i < cfg.numScanners; i++) {
         scanners.push(new Scanner(
             `scanner-${String.fromCharCode(65 + i)}`, // Scanner-A, Scanner-B, ...
             random(width), 
@@ -130,8 +193,11 @@ function setup() {
 }
 
 function draw() {
-    background(230);
+    background(cfg.backgroundColor);
 
     beacons.forEach(b => b.display());
-    scanners.forEach(s => s.display());
+    scanners.forEach(s => {
+        s.update(); // Update scanner state
+        s.display();
+    });
 } 
