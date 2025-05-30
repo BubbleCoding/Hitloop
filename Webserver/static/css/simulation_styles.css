@@ -1,0 +1,78 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background-color: #e0e0e0; /* Light gray background for the page */
+}
+
+#simulation-container {
+    display: flex;
+    flex-direction: column; /* Stack UI panel above canvas */
+    align-items: center; /* Center items horizontally */
+    padding: 20px;
+    gap: 20px; /* Space between UI panel and canvas */
+}
+
+/* This div will now directly hold the canvas, so it can be centered easily */
+#canvas-parent {
+    /* The canvas itself will have a border if p5.js draws one, or you can add it here */
+    /* Example: border: 1px solid black; */
+    display: flex; /* To center the canvas if it's smaller than this div */
+    justify-content: center;
+}
+
+#canvas-parent canvas {
+    border: 1px solid black;
+    display: block; /* Prevents extra space below canvas if any */
+}
+
+#ui-controls-panel {
+    display: flex; /* Enable flexbox for horizontal layout of sliders */
+    flex-wrap: wrap; /* Allow sliders to wrap if not enough space */
+    justify-content: center; /* Center sliders if they wrap or don't fill space */
+    gap: 15px; /* Spacing between individual control groups */
+    padding: 15px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 8px; /* Slightly more rounded */
+    width: auto; /* Allow it to size based on content or be constrained by simulation-container */
+    max-width: 90%; /* Prevent it from being too wide on large screens */
+    margin-bottom: 20px; /* Space it from the canvas */
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+#ui-controls-panel h3 {
+    width: 100%; /* Make the heading span the full width of the panel */
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    flex-basis: 100%; /* Ensure it takes its own line */
+}
+
+/* Each control group (label + slider + value span) */
+#ui-controls-panel > div {
+    display: flex;
+    flex-direction: column; /* Stack label, slider, value vertically */
+    align-items: center; /* Center items within the group */
+    min-width: 150px; /* Give each control group a minimum width */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff; /* White background for each control box */
+}
+
+#ui-controls-panel label {
+    /* display: block; // No longer needed as parent is flex-column */
+    margin-bottom: 8px; /* More space below label */
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+#ui-controls-panel input[type="range"] {
+    width: 100%; /* Slider takes full width of its parent div */
+    margin-bottom: 5px;
+}
+
+#ui-controls-panel span { /* For displaying slider values */
+    font-size: 0.85em;
+    color: #333;
+} 

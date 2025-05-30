@@ -5,12 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beacon/Scanner Simulation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
-    <style>
-        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f0f0; }
-        canvas { border: 1px solid black; }
-    </style>
+    <!-- p5.dom.min.js is needed for createSlider, createButton etc. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='simulation_styles.css') }}">
 </head>
 <body>
+    <div id="simulation-container">
+        <div id="ui-controls-panel">
+            <h3>Simulation Controls</h3>
+            <!-- UI elements will be added here by p5.js -->
+        </div>
+        <div id="canvas-parent">
+            <!-- p5.js canvas will be attached here -->
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/simulation.js') }}"></script>
 </body>
 </html> 
