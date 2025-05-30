@@ -3,31 +3,58 @@ function fetchAndUpdateScanners() {
         .then(response => response.json())
         .then(scannersData => {
             const container = document.getElementById('scanner-data-container');
-            if (Object.keys(scannersData).length > 0) {
-                let html = '';
-                for (const [scannerId, scannerInfo] of Object.entries(scannersData)) {
-                    html += `<h2>Scanner: ${scannerId} (Last Update: ${new Date(scannerInfo.timestamp).toLocaleString()})</h2>`;
-                    
-                    if (scannerInfo.beacons_observed && Object.keys(scannerInfo.beacons_observed).length > 0) {
-                        html += '<table><thead><tr><th>Beacon ID</th><th>Beacon Name</th><th>RSSI</th><th>Est. Distance</th></tr></thead><tbody>';
-                        for (const [beaconKey, beaconData] of Object.entries(scannerInfo.beacons_observed)) {
-                            html += `<tr>
-                                <td>${beaconKey}</td>
-                                <td>${beaconData.beacon_name}</td>
-                                <td>${beaconData.rssi}</td>
-                                <td>${beaconData.distance}</td>
-                            </tr>`;
-                        }
-                        html += '</tbody></table>';
-                    } else {
-                        html += '<p>No beacons detected by this scanner recently.</p>';
-                    }
-                    html += '<hr>'; // Separator between scanners
-                }
-                container.innerHTML = html;
-            } else {
+            
+            if (Object.keys(scannersData).length === 0) {
                 container.innerHTML = '<p>No scanner data received yet. Make sure the simulation is running.</p>';
+                return;
             }
+
+            // Dynamically determine beacon columns from the data
+            const beaconColumnMap = new Map(); // Use a Map to store unique beaconId -> beaconName
+            for (const scannerId in scannersData) {
+                const scannerInfo = scannersData[scannerId];
+                if (scannerInfo.beacons_observed) {
+                    for (const beaconId in scannerInfo.beacons_observed) {
+                        if (!beaconColumnMap.has(beaconId)) {
+                            beaconColumnMap.set(beaconId, scannerInfo.beacons_observed[beaconId].beacon_name);
+                        }
+                    }
+                }
+            }
+
+            // Convert map to an array and sort for consistent column order
+            // Sorting by beaconId (e.g., 'beacon-NE', 'beacon-NW', 'beacon-SE', 'beacon-SW')
+            const sortedBeaconColumns = Array.from(beaconColumnMap.entries())
+                .map(([id, name]) => ({ id, name }))
+                .sort((a, b) => a.id.localeCompare(b.id));
+
+            let tableHtml = '<table><thead><tr><th>Scanner Name</th>';
+            
+            // Add beacon headers from our dynamically generated and sorted list
+            sortedBeaconColumns.forEach(beaconCol => {
+                tableHtml += `<th>${beaconCol.name} (RSSI)</th>`;
+            });
+            tableHtml += '<th>Last Update</th></tr></thead><tbody>'; // Added Last Update column for scanner
+
+            // Add scanner rows
+            for (const scannerId of Object.keys(scannersData).sort()) { // Sort scanner IDs for consistent row order
+                const scannerInfo = scannersData[scannerId];
+                tableHtml += `<tr><td>${scannerId}</td>`;
+                
+                sortedBeaconColumns.forEach(beaconCol => {
+                    let rssiValue = '-'; // Default if not found for this scanner
+                    if (scannerInfo.beacons_observed && scannerInfo.beacons_observed[beaconCol.id]) {
+                        rssiValue = scannerInfo.beacons_observed[beaconCol.id].rssi;
+                    }
+                    tableHtml += `<td>${rssiValue}</td>`;
+                });
+                // Add scanner's last update time
+                tableHtml += `<td>${new Date(scannerInfo.timestamp).toLocaleTimeString()}</td>`;
+                tableHtml += '</tr>';
+            }
+            tableHtml += '</tbody></table>';
+            container.innerHTML = tableHtml;
+
         })
         .catch(error => {
             console.error('Error fetching scanner data:', error);
