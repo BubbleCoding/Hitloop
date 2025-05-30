@@ -71,6 +71,13 @@ def get_all_devices():
 def simulation_page():
     return render_template('simulation.html')
 
+@app.route('/reset_devices', methods=['POST'])
+def reset_devices_data():
+    global devices_data
+    devices_data.clear()
+    print("All device data has been cleared.")
+    return jsonify({"status": "success", "message": "All device data cleared."}), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
