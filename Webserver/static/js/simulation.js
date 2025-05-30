@@ -1,5 +1,5 @@
 const cfg = {
-    numScanners: 10,
+    numScanners: 1,
     // numBeacons: 4, // Beacons are now hardcoded to corners
     dataSendIntervalMs: 5000,
 
@@ -10,12 +10,17 @@ const cfg = {
     beaconRadius: 10,
     beaconColor: [255, 0, 0, 150], // [R, G, B, Alpha]
     beaconMargin: 30,
+    beaconDistanceCircleStrokeColor: [100, 100, 100, 70], // Semi-transparent gray
+    beaconDistanceCircleStrokeWeight: 1,
 
     scannerSize: 15,
     scannerColor: [0, 0, 255, 150], // [R, G, B, Alpha]
     scannerInitialVelMagnitude: 1, // For random(-val, val)
-    scannerMaxSpeed: 2,
+    scannerMaxSpeed: 0.1,
     scannerVelChangeMagnitude: 0.05, // For random(-val, val)
+    scannerRssiDisplayTextColor: [0, 0, 0], // Color for RSSI text
+    scannerRssiDisplayTextSize: 10,
+    scannerRssiDisplayLineHeight: 12,
 
     // RSSI simulation parameters
     rssiAtMinDist: -30,         // RSSI at very close distance (e.g., 0-1 units)
@@ -32,8 +37,9 @@ let beacons = [];
 
 // --- Helper function to simulate RSSI from distance ---
 // This is a simplified model. RSSI typically ranges from -30 (very close) to -100 (far).
-function distanceToRSSI(distance) {
-    const maxDist = Math.sqrt(width * width + height * height); // Theoretical max distance on canvas
+function distanceToRSSI(distance) {   
+    // Use configured canvas dimensions for consistency
+    const maxDist = Math.sqrt(cfg.canvasWidth * cfg.canvasWidth + cfg.canvasHeight * cfg.canvasHeight);
     if (distance < 1) distance = 1; // Avoid issues with log or zero distance
     
     // Simple linear mapping: -30 dBm at 0 distance, -100 dBm at maxDist/2
@@ -42,6 +48,7 @@ function distanceToRSSI(distance) {
     
     let rssi = map(effectiveDistance, 0, maxDist / 2, cfg.rssiAtMinDist, cfg.rssiAtEffectiveMaxDist);
     return Math.round(rssi); // Return integer RSSI
+    
 }
 
 // --- Beacon Class ---
@@ -149,9 +156,24 @@ class Scanner {
         noStroke();
         rectMode(CENTER);
         rect(this.pos.x, this.pos.y, this.size, this.size);
-        fill(0);
-        textAlign(CENTER, CENTER);
-        text(this.id, this.pos.x, this.pos.y - this.size - 5);
+        
+        fill(...cfg.scannerRssiDisplayTextColor);
+        textAlign(CENTER, TOP); // Align text for scanner ID and RSSI list
+        textSize(cfg.scannerRssiDisplayTextSize);
+
+        // Display scanner ID
+        let textYOffset = this.pos.y - this.size - 5 - cfg.scannerRssiDisplayLineHeight; // Start above the scanner
+        text(this.id, this.pos.x, textYOffset);
+
+        // Display RSSI to each beacon
+        textYOffset += cfg.scannerRssiDisplayLineHeight; // Move down for the first RSSI line
+
+        beacons.forEach(beacon => {
+            let d = dist(this.pos.x, this.pos.y, beacon.pos.x, beacon.pos.y);
+            let rssi = distanceToRSSI(d);
+            text(`${beacon.name}: ${rssi}dBm`, this.pos.x, textYOffset);
+            textYOffset += cfg.scannerRssiDisplayLineHeight; // Move to next line for next beacon
+        });
     }
 }
 
@@ -197,7 +219,20 @@ function draw() {
 
     beacons.forEach(b => b.display());
     scanners.forEach(s => {
-        s.update(); // Update scanner state
+        s.update();
         s.display();
+    });
+
+    // Draw distance circles from each beacon to each scanner
+    noFill();
+    strokeWeight(cfg.beaconDistanceCircleStrokeWeight);
+    
+    beacons.forEach(beacon => {
+        // Set stroke color for this beacon's distance circles (can be outside scanner loop if same for all)
+        stroke(...cfg.beaconDistanceCircleStrokeColor); 
+        scanners.forEach(scanner => {
+            let d = dist(beacon.pos.x, beacon.pos.y, scanner.pos.x, scanner.pos.y);
+            ellipse(beacon.pos.x, beacon.pos.y, d * 2, d * 2); // d is radius, ellipse takes diameter
+        });
     });
 } 
