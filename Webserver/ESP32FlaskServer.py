@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 
 app = Flask(__name__)
@@ -50,70 +50,7 @@ def receive_data():
 
 @app.route('/')
 def index():
-    html_template = '''
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="refresh" content="5">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ESP32 RSSI Monitor</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                padding: 20px;
-                background-color: #f0f2f5;
-            }
-            h1 {
-                color: #333;
-            }
-            table {
-                border-collapse: collapse;
-                width: 100%;
-                margin-top: 20px;
-            }
-            th, td {
-                text-align: left;
-                padding: 8px;
-                border-bottom: 1px solid #ddd;
-            }
-            th {
-                background-color: #f4f4f4;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Last Known RSSI of each beacon in range </h1>
-        {% if devices %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Device ID</th>
-                        <th>Beacon name</th>
-                        <th>RSSI</th>
-                        <th>Distance</th>
-                        <th>Last Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for device_id, info in devices.items() %}
-                        <tr>
-                            <td>{{ device_id }}</td>
-                            <td>{{ info.beacon_name }}</td>
-                            <td>{{ info.rssi }}</td>
-                            <td>{{ info.distance}} </td>
-                            <td>{{ info.timestamp }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No device data received yet.</p>
-        {% endif %}
-    </body>
-    </html>
-    '''
-    return render_template_string(html_template, devices=devices_data)
+    return render_template('index.html', devices=devices_data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
