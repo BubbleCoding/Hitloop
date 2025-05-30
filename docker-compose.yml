@@ -16,4 +16,6 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./Webserver:/app 
+      - ./Webserver:/app
+    environment:
+      - FLASK_ENV=development
