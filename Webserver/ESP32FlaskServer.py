@@ -54,7 +54,7 @@ def receive_data():
             "beacon_name": beacon_name,
             "distance": RSSI_to_distance(rssi) # Calculate distance based on RSSI
         }
-        # print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}")
+        print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}")
 
     # print(f"Updated data for {scanner_id}: {devices_data[scanner_id]}")
     return jsonify({"status": "success"}), 200
