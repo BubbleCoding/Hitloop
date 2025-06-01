@@ -25,18 +25,21 @@ This project uses Docker and Docker Compose to manage the web application and do
 **Commands:**
 
 * **Build and run all services:**
+  This command builds and starts all services. Ports are mapped to localhost as detailed in the 'Services' section (e.g., `docs` at `http://localhost:8000`, `webserver` at `http://localhost:5000`).
 
     ```bash
     docker-compose up --build
     ```
 
 * **Build and run only the documentation service:**
+  This command starts the `docs` service, accessible at `http://localhost:8000`.
 
     ```bash
     docker-compose up --build docs
     ```
 
 * **Build and run only the webserver service:**
+  This command starts the `webserver` service, accessible at `http://localhost:5000`.
 
     ```bash
     docker-compose up --build webserver
