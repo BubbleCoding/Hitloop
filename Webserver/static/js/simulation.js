@@ -10,6 +10,9 @@ let canvas;
 // UI Element Variables (sliders and their labels)
 let numScannersSlider, maxSpeedSlider, velChangeSlider;
 let numScannersLabel, maxSpeedLabel, velChangeLabel;
+// Flocking UI Elements
+let perceptionRadiusSlider, separationForceSlider, alignmentForceSlider, cohesionForceSlider;
+let perceptionRadiusLabel, separationForceLabel, alignmentForceLabel, cohesionForceLabel;
 
 // Initialization function for beacons (calls Beacon class from Beacon.js)
 function initializeBeacons() {
@@ -90,6 +93,59 @@ function initializeUI() {
         cfg.scannerVelChangeMagnitude = velChangeSlider.value();
         velChangeLabel.html(`Vel. Change Mag.: ${cfg.scannerVelChangeMagnitude.toFixed(2)}`);
     });
+
+    // Flocking UI controls
+    let perceptionRadiusDiv = createDiv();
+    perceptionRadiusDiv.parent(uiPanel);
+    perceptionRadiusDiv.addClass('control-group');
+    perceptionRadiusLabel = createSpan(`Perception Radius: ${cfg.perceptionRadius}`);
+    perceptionRadiusLabel.parent(perceptionRadiusDiv);
+    perceptionRadiusSlider = createSlider(cfg.minPerceptionRadius, cfg.maxPerceptionRadius, cfg.perceptionRadius, cfg.perceptionRadiusStep);
+    perceptionRadiusSlider.parent(perceptionRadiusDiv);
+    perceptionRadiusSlider.input(() => {
+        cfg.perceptionRadius = perceptionRadiusSlider.value();
+        perceptionRadiusLabel.html(`Perception Radius: ${cfg.perceptionRadius}`);
+        scanners.forEach(s => s.perceptionRadius = cfg.perceptionRadius);
+    });
+
+    let separationForceDiv = createDiv();
+    separationForceDiv.parent(uiPanel);
+    separationForceDiv.addClass('control-group');
+    separationForceLabel = createSpan(`Separation Force: ${cfg.separationForce.toFixed(2)}`);
+    separationForceLabel.parent(separationForceDiv);
+    separationForceSlider = createSlider(cfg.minSeparationForce, cfg.maxSeparationForce, cfg.separationForce, cfg.separationForceStep);
+    separationForceSlider.parent(separationForceDiv);
+    separationForceSlider.input(() => {
+        cfg.separationForce = separationForceSlider.value();
+        separationForceLabel.html(`Separation Force: ${cfg.separationForce.toFixed(2)}`);
+        scanners.forEach(s => s.separationForce = cfg.separationForce);
+    });
+
+    let alignmentForceDiv = createDiv();
+    alignmentForceDiv.parent(uiPanel);
+    alignmentForceDiv.addClass('control-group');
+    alignmentForceLabel = createSpan(`Alignment Force: ${cfg.alignmentForce.toFixed(2)}`);
+    alignmentForceLabel.parent(alignmentForceDiv);
+    alignmentForceSlider = createSlider(cfg.minAlignmentForce, cfg.maxAlignmentForce, cfg.alignmentForce, cfg.alignmentForceStep);
+    alignmentForceSlider.parent(alignmentForceDiv);
+    alignmentForceSlider.input(() => {
+        cfg.alignmentForce = alignmentForceSlider.value();
+        alignmentForceLabel.html(`Alignment Force: ${cfg.alignmentForce.toFixed(2)}`);
+        scanners.forEach(s => s.alignmentForce = cfg.alignmentForce);
+    });
+
+    let cohesionForceDiv = createDiv();
+    cohesionForceDiv.parent(uiPanel);
+    cohesionForceDiv.addClass('control-group');
+    cohesionForceLabel = createSpan(`Cohesion Force: ${cfg.cohesionForce.toFixed(2)}`);
+    cohesionForceLabel.parent(cohesionForceDiv);
+    cohesionForceSlider = createSlider(cfg.minCohesionForce, cfg.maxCohesionForce, cfg.cohesionForce, cfg.cohesionForceStep);
+    cohesionForceSlider.parent(cohesionForceDiv);
+    cohesionForceSlider.input(() => {
+        cfg.cohesionForce = cohesionForceSlider.value();
+        cohesionForceLabel.html(`Cohesion Force: ${cfg.cohesionForce.toFixed(2)}`);
+        scanners.forEach(s => s.cohesionForce = cfg.cohesionForce);
+    });
 }
 
 // Global function to trigger data sending for all scanners
@@ -137,7 +193,7 @@ function draw() {
     
     beacons.forEach(b => b.display());
     scanners.forEach(s => {
-        s.update();
+        s.update(scanners);
         s.display();
     });
 }

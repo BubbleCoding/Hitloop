@@ -12,14 +12,30 @@ class Scanner {
         this.maxSpeed = cfg.scannerMaxSpeed;
         this.size = cfg.scannerSize;
         this.colorVal = color(...cfg.scannerColor);
+        // Flocking parameters - will be updated by UI
+        this.perceptionRadius = cfg.perceptionRadius;
+        this.separationForce = cfg.separationForce;
+        this.alignmentForce = cfg.alignmentForce;
+        this.cohesionForce = cfg.cohesionForce;
     }
 
-    update() {
+    update(flock) {
         let prevPos = this.pos.copy();
-        this.vel.add(createVector(random(-cfg.scannerVelChangeMagnitude, cfg.scannerVelChangeMagnitude), 
-                                  random(-cfg.scannerVelChangeMagnitude, cfg.scannerVelChangeMagnitude)));
+
+        let separation = this.separate(flock);
+        let alignment = this.align(flock);
+        let cohesion = this.cohere(flock);
+
+        separation.mult(this.separationForce);
+        alignment.mult(this.alignmentForce);
+        cohesion.mult(this.cohesionForce);
+
+        this.vel.add(separation);
+        this.vel.add(alignment);
+        this.vel.add(cohesion);
         this.vel.limit(this.maxSpeed);
         this.pos.add(this.vel);
+
         this.movementSinceLastSend += p5.Vector.dist(this.pos, prevPos);
 
         if (this.pos.x - this.size / 2 < 0 || this.pos.x + this.size / 2 > cfg.canvasWidth) {
@@ -30,6 +46,83 @@ class Scanner {
             this.pos.y = constrain(this.pos.y, this.size / 2, cfg.canvasHeight - this.size / 2);
             this.vel.y *= -1;
         }
+    }
+
+    // Separation: steer to avoid crowding local flockmates
+    separate(flock) {
+        let desiredSeparation = this.size * 2; // Desired distance from neighbors
+        let steer = createVector(0, 0);
+        let count = 0;
+        for (let other of flock) {
+            let d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
+            if ((d > 0) && (d < desiredSeparation) && (other !== this)) {
+                let diff = p5.Vector.sub(this.pos, other.pos);
+                diff.normalize();
+                diff.div(d); // Weight by distance
+                steer.add(diff);
+                count++;
+            }
+        }
+        if (count > 0) {
+            steer.div(count);
+        }
+        if (steer.magSq() > 0) {
+            steer.normalize();
+            steer.mult(this.maxSpeed);
+            steer.sub(this.vel);
+            steer.limit(cfg.scannerMaxForce); // Assuming maxForce is defined in cfg, or use a fixed value
+        }
+        return steer;
+    }
+
+    // Alignment: steer towards the average heading of local flockmates
+    align(flock) {
+        let steer = createVector(0, 0);
+        let count = 0;
+        for (let other of flock) {
+            let d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
+            if ((d > 0) && (d < this.perceptionRadius) && (other !== this)) {
+                steer.add(other.vel);
+                count++;
+            }
+        }
+        if (count > 0) {
+            steer.div(count);
+            steer.normalize();
+            steer.mult(this.maxSpeed);
+            steer.sub(this.vel);
+            steer.limit(cfg.scannerMaxForce); // Assuming maxForce is defined in cfg
+        }
+        return steer;
+    }
+
+    // Cohesion: steer to move toward the average position of local flockmates
+    cohere(flock) {
+        let sum = createVector(0, 0);
+        let count = 0;
+        for (let other of flock) {
+            let d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
+            if ((d > 0) && (d < this.perceptionRadius) && (other !== this)) {
+                sum.add(other.pos);
+                count++;
+            }
+        }
+        if (count > 0) {
+            sum.div(count);
+            return this.seek(sum);
+        }
+        return createVector(0,0);
+    }
+
+    // A method to calculate and apply a steering force towards a target
+    // STEER = DESIRED MINUS VELOCITY
+    seek(target) {
+        let desired = p5.Vector.sub(target, this.pos);
+        desired.normalize();
+        desired.mult(this.maxSpeed);
+        let steer = p5.Vector.sub(desired, this.vel);
+        steer.limit(cfg.scannerMaxForce); // Assuming maxForce is defined in cfg
+        return steer;
     }
 
     detectAndSendData() {
