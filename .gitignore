@@ -4,3 +4,6 @@ crowd-controller.code-workspace
 *rhl
 *.pyc
 *.stl
+*.ino.elf
+*.ino.map
+*.ino.merged.bin
