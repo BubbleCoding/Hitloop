@@ -12,8 +12,10 @@ SPARKFUN_LIS2DH12 accel;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 uint8_t motorState = LOW;
+unsigned long lastMotorToggleTime = 0;
 
 void setup() {
+  pinMode(MOTOR_PIN, OUTPUT);
   strip.begin();            
   strip.show();             
   strip.setBrightness(50);  
@@ -48,6 +50,8 @@ void loop() {
     Serial.print(accelZ, 1);
     Serial.print("\t");
     Serial.print(tempC, 1);
+    Serial.print("\t");
+    Serial.print(motorState);
     Serial.println();
 
     firstPixelHue = firstPixelHue > 5 * 65536 ? 0 : firstPixelHue + 256;
@@ -56,9 +60,10 @@ void loop() {
     strip.show();  
   }
 
-  if (millis() % MOTOR_INTERVAL == 0){
+  if (millis() - lastMotorToggleTime >= MOTOR_INTERVAL){
     motorState = !motorState;
     digitalWrite(MOTOR_PIN, motorState);
+    lastMotorToggleTime = millis();
   }
 
 }
