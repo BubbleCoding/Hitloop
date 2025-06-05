@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -18,6 +19,14 @@ def RSSI_to_distance(RSSI):
     if RSSI >= 80:
         distance = "far"
     return distance
+
+@app.route('/')
+def index():
+    return render_template('index.html', devices=devices_data)
+
+@app.route('/configure_device')
+def configure_device():
+    return render_template('configure.html')
 
 @app.route('/data', methods=['POST'])
 def receive_data():
@@ -73,10 +82,6 @@ def receive_data():
         print(f"Scanner {scanner_id} reported movement: {devices_data[scanner_id].get('movement')} (No beacon data in this payload or invalid format)")
 
     return jsonify({"status": "success"}), 200
-
-@app.route('/')
-def index():
-    return render_template('index.html', devices=devices_data)
 
 @app.route('/devices', methods=['GET'])
 def get_all_devices():
