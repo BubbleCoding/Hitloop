@@ -24,10 +24,6 @@ def RSSI_to_distance(RSSI):
 def index():
     return render_template('index.html', devices=devices_data)
 
-@app.route('/configure_device')
-def configure_device():
-    return render_template('configure.html')
-
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
