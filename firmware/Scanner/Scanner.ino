@@ -16,7 +16,7 @@ Commands van de server uitvoeren.                         |
 BLEScan* pBLEScan;
 Config cfg;
 
-String Data = "";
+String jsonString = "";
 int devCounter = 0;
 
 // Format a single device's data into JSON using the UUID
@@ -56,7 +56,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
       Serial.print(" UUID (MAC Address): ");
       Serial.println(uuid);
       
-      Data += jsonDataMaker(uuid, rssi, BeaconName);  // Use UUID as device key
+      jsonString += jsonDataMaker(uuid, rssi, BeaconName);  // Use UUID as device key
     }
   }
 };
@@ -107,7 +107,7 @@ void loop() {
 
 void BLEscan() {
   devCounter = 0;
-  Data = "";
+  jsonString = "";
   Serial.println("Starting BLE scan...");
   
   BLEScanResults* results = pBLEScan->start(SCAN_TIME, false);
@@ -124,7 +124,7 @@ void wifiDataSender() {
     http.begin(cfg.serverUrl);
     http.addHeader("Content-Type", "application/json");
 
-    String finalJson = jsonDataFixer(Data);
+    String finalJson = jsonDataFixer(jsonString);
     Serial.println("Sending JSON: ");
     Serial.println(finalJson);
 
