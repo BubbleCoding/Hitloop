@@ -11,19 +11,13 @@ Commands van de server uitvoeren.                         |
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include "config.h"
-#include <Preferences.h>
-
+#include "Configuration.h"
 
 BLEScan* pBLEScan;
-Preferences preferences;
+Config cfg;
 
 String Data = "";
 int devCounter = 0;
-
-String ssid = "";
-String password = "";
-String serverUrl = "";
-String name = "";
 
 // Format a single device's data into JSON using the UUID
 String jsonDataMaker(String UUID, float BLEstrength, String BeaconName) {
@@ -42,57 +36,11 @@ String jsonDataFixer(String rawData) {
   }
   String jsonData = "{";
   jsonData += rawData;
-  jsonData += ",\"Scanner name\": \"" + String(name) + "\"";
+  jsonData += ",\"Scanner name\": \"" + cfg.scannerName + "\"";
   jsonData += "}";
   return jsonData;
 }
 
-void enterSerialConfig() {
-  Serial.println("Entering configuration mode...");
-  preferences.begin("config", false); // Start preferences in read-write mode
-
-  Serial.println("Enter SSID:");
-  while (!Serial.available()) { delay(100); }
-  ssid = Serial.readStringUntil('\n');
-  ssid.trim();
-  preferences.putString("ssid", ssid);
-  Serial.print("SSID set to: ");
-  Serial.println(ssid);
-
-  Serial.println("Enter Password:");
-  while (!Serial.available()) { delay(100); }
-  password = Serial.readStringUntil('\n');
-  password.trim();
-  preferences.putString("password", password);
-  Serial.println("Password set.");
-
-  Serial.println("Enter Server URL:");
-  while (!Serial.available()) { delay(100); }
-  serverUrl = Serial.readStringUntil('\n');
-  serverUrl.trim();
-  preferences.putString("serverUrl", serverUrl);
-  Serial.print("Server URL set to: ");
-  Serial.println(serverUrl);
-
-  preferences.end();
-  Serial.println("Configuration saved. Restarting in 3 seconds...");
-  delay(3000);
-  ESP.restart();
-}
-
-void loadConfig() {
-  preferences.begin("config", true); // Start preferences in read-only mode
-  ssid = preferences.getString("ssid", "");
-  password = preferences.getString("password", "");
-  serverUrl = preferences.getString("serverUrl", "http://192.168.1.165:5000/data"); // Default value
-  preferences.end();
-
-  Serial.println("Loaded configuration:");
-  Serial.print("SSID: ");
-  Serial.println(ssid);
-  Serial.print("Server URL: ");
-  Serial.println(serverUrl);
-}
 
 // BLE device callback
 class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -115,7 +63,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
 void initializeWireless(){
 // Connect to Wi-Fi
-  WiFi.begin(ssid.c_str(), password.c_str());
+  WiFi.begin(cfg.ssid.c_str(), cfg.password.c_str());
   Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(WIFI_CONNECT_DELAY);
@@ -132,14 +80,6 @@ void initializeWireless(){
   pBLEScan->setWindow(BLE_SCAN_WINDOW);
 }
 
-void setScannerName() {
-  String mac = WiFi.macAddress();
-  String macSuffix = mac.substring(12);
-  macSuffix.replace(":", "");
-  name = String(SCANNER_NAME) + "-" + macSuffix;
-  Serial.print("Scanner name set to: ");
-  Serial.println(name);
-}
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
@@ -147,17 +87,16 @@ void setup() {
 
   pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
 
-  loadConfig();
+  cfg.loadConfig();
 
   Serial.println("Hold BOOT button (PIN 9) now to enter config mode.");
   delay(2000); // Give user time to press button
 
   if (digitalRead(BOOT_BUTTON_PIN) == LOW) {
-    enterSerialConfig();
+    cfg.enterSerialConfig();
   }
 
   initializeWireless();
-  setScannerName();
 }
 
 void loop() {
@@ -182,7 +121,7 @@ void BLEscan() {
 void wifiDataSender() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    http.begin(serverUrl);
+    http.begin(cfg.serverUrl);
     http.addHeader("Content-Type", "application/json");
 
     String finalJson = jsonDataFixer(Data);

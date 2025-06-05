@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define POST_ENDPOINT "/data"
+#define DEFAULT_PORT 5000
+
 #define SCANNER_NAME "Scanner"
 #define BEACON_NAME_PREFIX "HitloopBeacon"
 #define BLE_SCAN_INTERVAL 100
