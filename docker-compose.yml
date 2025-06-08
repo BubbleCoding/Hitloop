@@ -1,20 +1,20 @@
 version: '3.8'
 services:
-  docs:
+  hitloop-docs:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - .:/app
 
-  webserver:
+  hitloop-webserver:
     build:
       context: ./Webserver
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ./Webserver:/app
     environment:
