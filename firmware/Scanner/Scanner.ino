@@ -5,130 +5,50 @@ De RSSI en de naam van de beacon naar de server sturen.   |Check
 Data ontvangen van de server.                             |
 Commands van de server uitvoeren.                         |
 */
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <BLEDevice.h>
-#include <BLEScan.h>
-#include <BLEAdvertisedDevice.h>
+#include "Arduino.h"
+#include <vector>
+#include "config.h"
+#include "Configuration.h"
+#include "Timer.h"
 
-int scanTime = 10;  // Scan duration in seconds
-BLEScan* pBLEScan;
+// Process classes
+#include "SystemManager.h"
+#include "WifiManager.h"
+#include "BleManager.h"
 
-String Data = "";
-int devCounter = 0;
+Config cfg;
 
-const char* ssid = "XXXXXX";
-const char* password = "XXXXXX";
-const char* serverUrl = "http://192.168.1.165:5000/data";
-const char* name = "Scanner-1";
+// Define the global pointer required for callbacks
+BleManager* g_bleManager = nullptr;
 
-// Format a single device's data into JSON using the UUID
-String jsonDataMaker(String UUID, float BLEstrength, String BeaconName) {
-  devCounter++;
-  String jsonData = "\"" + UUID + "\": {";  // Use UUID as device ID
-  jsonData += "\"RSSI\": " + String(BLEstrength, 1) + ",";
-  jsonData += "\"Beacon name\": \"" + BeaconName + "\"";
-  jsonData += "},";
-  return jsonData;
-}
-
-// Wrap all the data in a valid JSON object
-String jsonDataFixer(String rawData) {
-  if (rawData.endsWith(",")) {
-    rawData.remove(rawData.length() - 1); // Remove trailing comma
-  }
-  String jsonData = "{";
-  jsonData += rawData;
-  jsonData += ",\"Scanner name\": \"" + String(name) + "\"";
-  jsonData += "}";
-  return jsonData;
-}
-
-// BLE device callback
-class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-  void onResult(BLEAdvertisedDevice advertisedDevice) {
-    if (advertisedDevice.haveName() && advertisedDevice.getName().startsWith("ESP32")) {
-      float rssi = advertisedDevice.getRSSI();
-      String BeaconName = advertisedDevice.getName();
-      String uuid = advertisedDevice.getAddress().toString();  // Get the device's MAC address as UUID
-      
-      Serial.print(BeaconName);
-      Serial.print(" RSSI: ");
-      Serial.println(rssi);
-      Serial.print(" UUID (MAC Address): ");
-      Serial.println(uuid);
-      
-      Data += jsonDataMaker(uuid, rssi, BeaconName);  // Use UUID as device key
-    }
-  }
-};
+// Process managers
+std::vector<Process*> processes;
+WifiManager* wifiManager;
+BleManager* bleManager;
 
 void setup() {
-  Serial.begin(115200);
-  delay(1000);
+  Serial.begin(SERIAL_BAUD_RATE);
+  cfg.loadConfig();
 
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  // Create and add all processes to the manager
+  processes.push_back(new SystemManager(cfg));
+
+  wifiManager = new WifiManager(cfg);
+  processes.push_back(wifiManager);
+
+  // The BleManager depends on the WifiManager and Config
+  bleManager = new BleManager(*wifiManager, cfg);
+  processes.push_back(bleManager);
+  
+  // Initialize all processes
+  for (auto process : processes) {
+    process->setup();
   }
-  Serial.println("\nConnected to WiFi");
-
-  // Init BLE scan
-  BLEDevice::init("");
-  pBLEScan = BLEDevice::getScan();
-  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
-  pBLEScan->setActiveScan(true);
-  pBLEScan->setInterval(100);
-  pBLEScan->setWindow(99);
 }
 
 void loop() {
-  BLEscan();
-  wifiDataSender();
-  wifiReceiveData();
-}
-
-void BLEscan() {
-  devCounter = 0;
-  Data = "";
-  Serial.println("Starting BLE scan...");
-  
-  BLEScanResults* results = pBLEScan->start(scanTime, false);
-  Serial.print("Scan complete. Devices found: ");
-  Serial.println(results->getCount());
-  
-  pBLEScan->clearResults();  // Always free up memory!
-  delay(1000);
-}
-
-void wifiDataSender() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(serverUrl);
-    http.addHeader("Content-Type", "application/json");
-
-    String finalJson = jsonDataFixer(Data);
-    Serial.println("Sending JSON: ");
-    Serial.println(finalJson);
-
-    int httpResponseCode = http.POST(finalJson);
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    if (httpResponseCode != 200) {
-      Serial.print("Error: ");
-      Serial.println(http.errorToString(httpResponseCode).c_str());
-    }
-
-    http.end();
-  } else {
-    Serial.println("WiFi not connected");
+  // Update all processes
+  for (auto process : processes) {
+    process->update();
   }
-  delay(3000);
-}
-
-void wifiReceiveData(){
-  return;
 }

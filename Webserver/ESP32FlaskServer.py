@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -18,6 +19,10 @@ def RSSI_to_distance(RSSI):
     if RSSI >= 80:
         distance = "far"
     return distance
+
+@app.route('/')
+def index():
+    return render_template('index.html', devices=devices_data)
 
 @app.route('/data', methods=['POST'])
 def receive_data():
@@ -74,10 +79,6 @@ def receive_data():
 
     return jsonify({"status": "success"}), 200
 
-@app.route('/')
-def index():
-    return render_template('index.html', devices=devices_data)
-
 @app.route('/devices', methods=['GET'])
 def get_all_devices():
     return jsonify(devices_data)
@@ -85,6 +86,10 @@ def get_all_devices():
 @app.route('/simulation')
 def simulation_page():
     return render_template('simulation.html')
+
+@app.route('/configure_device')
+def configure_device_page():
+    return render_template('configure_device.html')
 
 @app.route('/reset_devices', methods=['GET'])
 def reset_devices_data():

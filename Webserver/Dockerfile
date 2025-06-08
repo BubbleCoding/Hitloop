@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
@@ -10,4 +10,4 @@ COPY ESP32FlaskServer.py .
 EXPOSE 5000
 
 ENV FLASK_APP=ESP32FlaskServer.py
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"] 
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--debug"] 
