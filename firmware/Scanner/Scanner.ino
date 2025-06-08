@@ -13,11 +13,42 @@ Commands van de server uitvoeren.                         |
 #include "config.h"
 #include "Configuration.h"
 
+struct Timer {
+    unsigned long last_update;
+    unsigned long interval;
+
+    Timer(unsigned long an_interval) : interval(an_interval), last_update(0) {}
+
+    bool hasElapsed() {
+        return millis() - last_update > interval;
+    }
+
+    bool checkAndReset() {
+        if (hasElapsed()) {
+            reset();
+            return true;
+        }
+        return false;
+    }
+
+    void reset() {
+        last_update = millis();
+    }
+};
+
 BLEScan* pBLEScan;
 Config cfg;
 
 String jsonString = "";
 int devCounter = 0;
+
+Timer scanTimer(SCAN_TIME * 1000 + 1000); // Scan duration + delay
+Timer wifiCheckTimer(500);
+Timer configModeTimer(2000);
+
+bool configMode = false;
+bool wifiInitialized = false;
+bool isScanning = false;
 
 // Format a single device's data into JSON using the UUID
 String jsonDataMaker(String UUID, float BLEstrength, String BeaconName) {
@@ -61,16 +92,17 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   }
 };
 
-void initializeWireless(){
-// Connect to Wi-Fi
-  WiFi.begin(cfg.ssid.c_str(), cfg.password.c_str());
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(WIFI_CONNECT_DELAY);
-    Serial.print(".");
-  }
-  Serial.println("\nConnected to WiFi");
+void scanCompleteCallback(BLEScanResults results) {
+  Serial.print("Scan complete. Devices found: ");
+  Serial.println(results.getCount());
+  // pBLEScan->clearResults(); // The results are automatically cleared after the callback
+  
+  // After scan is complete, we can send the data
+  wifiDataSender();
+  isScanning = false;
+}
 
+void initializeBLE(){
   // Init BLE scan
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan();
@@ -83,39 +115,67 @@ void initializeWireless(){
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
-  delay(SETUP_DELAY);
+  configModeTimer.reset();
 
   pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
 
   cfg.loadConfig();
 
   Serial.println("Hold BOOT button (PIN 9) now to enter config mode.");
-  delay(2000); // Give user time to press button
-
-  if (digitalRead(BOOT_BUTTON_PIN) == LOW) {
-    cfg.enterSerialConfig();
-  }
-
-  initializeWireless();
+  
+  WiFi.begin(cfg.ssid.c_str(), cfg.password.c_str());
+  Serial.println("Connecting to WiFi...");
 }
 
 void loop() {
-  BLEscan();
-  wifiDataSender();
+  // Handle config mode entry within the first 2 seconds
+  if (!configModeTimer.hasElapsed()) {
+    if (digitalRead(BOOT_BUTTON_PIN) == LOW) {
+      if (!configMode) {
+        configMode = true;
+        cfg.enterSerialConfig(); // This function blocks and then restarts, so no need to handle state after it.
+      }
+    }
+  }
+
+  // Handle WiFi connection
+  if (WiFi.status() != WL_CONNECTED) {
+    if(wifiCheckTimer.checkAndReset()){
+      Serial.print(".");
+    }
+    return; // Wait for wifi to connect
+  } 
+  
+  if (!wifiInitialized) {
+      Serial.println("\nConnected to WiFi");
+      initializeBLE();
+      wifiInitialized = true;
+  }
+
+  // Non-blocking BLE scan
+  if (scanTimer.hasElapsed() && !isScanning) {
+    if (BLEscan()) {
+        scanTimer.reset();
+    }
+  }
+
+  // The data sending is now triggered by the BLE scan completion callback.
   wifiReceiveData();
 }
 
-void BLEscan() {
+bool BLEscan() {
   devCounter = 0;
   jsonString = "";
   Serial.println("Starting BLE scan...");
+  isScanning = true;
   
-  BLEScanResults* results = pBLEScan->start(SCAN_TIME, false);
-  Serial.print("Scan complete. Devices found: ");
-  Serial.println(results->getCount());
-  
-  pBLEScan->clearResults();  // Always free up memory!
-  delay(1000);
+  // Start the scan asynchronously. The scanCompleteCallback function will be called when it's done.
+  if(pBLEScan->start(SCAN_TIME, scanCompleteCallback)) {
+    return true;
+  } else {
+    Serial.println("Error starting scan");
+    return false;
+  }
 }
 
 void wifiDataSender() {
@@ -140,7 +200,6 @@ void wifiDataSender() {
   } else {
     Serial.println("WiFi not connected");
   }
-  delay(3000);
 }
 
 void wifiReceiveData(){
