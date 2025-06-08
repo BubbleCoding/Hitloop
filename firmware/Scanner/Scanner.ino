@@ -15,6 +15,7 @@ Commands van de server uitvoeren.                         |
 #include "SystemManager.h"
 #include "WifiManager.h"
 #include "BleManager.h"
+#include "IMUManager.h"
 
 Config cfg;
 
@@ -25,6 +26,7 @@ BleManager* g_bleManager = nullptr;
 std::vector<Process*> processes;
 WifiManager* wifiManager;
 BleManager* bleManager;
+IMUManager* imuManager;
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
@@ -36,8 +38,11 @@ void setup() {
   wifiManager = new WifiManager(cfg);
   processes.push_back(wifiManager);
 
-  // The BleManager depends on the WifiManager and Config
-  bleManager = new BleManager(*wifiManager, cfg);
+  imuManager = new IMUManager();
+  processes.push_back(imuManager);
+
+  // The BleManager depends on the WifiManager, Config, and IMUManager
+  bleManager = new BleManager(*wifiManager, cfg, imuManager);
   processes.push_back(bleManager);
   
   // Initialize all processes

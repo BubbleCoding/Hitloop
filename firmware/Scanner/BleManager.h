@@ -6,6 +6,7 @@
 #include "config.h"
 #include "WifiManager.h"
 #include "Configuration.h"
+#include "IMUManager.h"
 #include <BLEDevice.h>
 #include <BLEScan.h>
 #include <HTTPClient.h>
@@ -28,10 +29,15 @@ private:
     String collectedBeaconsJson;
     const WifiManager& wifiManager;
     Config& cfg;
+    IMUManager* imuManager;
 
     bool startScan() {
         if (isScanning) return false;
         
+        if (imuManager) {
+            imuManager->prepareForNextInterval();
+        }
+
         collectedBeaconsJson = "";
         Serial.println("Starting BLE scan...");
         isScanning = true;
@@ -46,18 +52,27 @@ private:
     }
     
     String buildJsonPayload() {
-        // Remove trailing comma from the collected beacons
         if (collectedBeaconsJson.endsWith(",")) {
             collectedBeaconsJson.remove(collectedBeaconsJson.length() - 1);
         }
 
         String payload = "{";
         payload += "\"Scanner name\": \"" + cfg.scannerName + "\",";
-        payload += "\"movement\": 0,"; // Movement is not implemented, default to 0
+        
+        String movementPayload = "{}";
+        if (imuManager) {
+            movementPayload = "{";
+            movementPayload += "\"avgAngleXZ\": " + String(imuManager->getAverageAngleXZ(), 2) + ",";
+            movementPayload += "\"avgAngleYZ\": " + String(imuManager->getAverageAngleYZ(), 2) + ",";
+            movementPayload += "\"totalMovement\": " + String(imuManager->getTotalMovement(), 2);
+            movementPayload += "}";
+        }
+        payload += "\"movement\": " + movementPayload + ",";
+        
         payload += "\"beacons\": {";
         payload += collectedBeaconsJson;
-        payload += "}"; // close beacons
-        payload += "}"; // close root
+        payload += "}";
+        payload += "}";
 
         return payload;
     }
@@ -87,12 +102,13 @@ private:
     }
 
 public:
-    BleManager(const WifiManager& wifi, Config& config) : 
+    BleManager(const WifiManager& wifi, Config& config, IMUManager* imu) : 
         scanTimer(SCAN_TIME * 1000 + 1000), 
         isScanning(false), 
         pBLEScan(nullptr), 
         wifiManager(wifi),
-        cfg(config) 
+        cfg(config),
+        imuManager(imu)
     {
         g_bleManager = this;
     }
@@ -127,7 +143,6 @@ public:
             float rssi = advertisedDevice.getRSSI();
             String beaconName = advertisedDevice.getName();
             
-            // Format: "beacon-name": { "RSSI": -75, "Beacon name": "beacon-name" },
             String beaconData = "\"" + beaconName + "\": {";
             beaconData += "\"RSSI\": " + String(rssi, 0) + ",";
             beaconData += "\"Beacon name\": \"" + beaconName + "\"";
