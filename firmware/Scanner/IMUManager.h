@@ -7,8 +7,8 @@
 #include <Wire.h>
 #include <math.h>
 
-// Conversion factor from mm/s^2 to g. 1g = 9806.65 mm/s^2
-#define MMS2_TO_G 0.00010197
+// Conversion factor from cm/s^2 to g. 1g = 980.665 cm/s^2
+#define CMS2_TO_G 0.0010197
 
 class IMUManager : public Process {
 private:
@@ -28,7 +28,7 @@ private:
     
 public:
     IMUManager() : 
-        readTimer(100), // Read every 100ms
+        readTimer(100) // Read every 100ms
     {}
 
     void setup() override {
@@ -52,18 +52,21 @@ public:
             float z_mm = sensor.getZ();
 
             // Convert to g-force
-            float x_g = x_mm * MMS2_TO_G;
-            float y_g = y_mm * MMS2_TO_G;
-            float z_g = z_mm * MMS2_TO_G;
+            float x_g = x_mm * CMS2_TO_G;
+            float y_g = y_mm * CMS2_TO_G;
+            float z_g = z_mm * CMS2_TO_G;
 
             // Accumulate angle data
             sumAngleXZ += atan2(x_g, z_g) * 180.0 / PI;
             sumAngleYZ += atan2(y_g, z_g) * 180.0 / PI;
 
             // Accumulate total movement
-            totalMovement += sqrt(pow(x_g, 2) + pow(y_g, 2) + pow(z_g, 2));
+            totalMovement += sqrt(x_g*x_g + y_g*y_g + z_g*z_g);
             
             readingCount++;
+            // Serial.print(x_g); Serial.print("\t");
+            // Serial.print(y_g); Serial.print("\t");
+            // Serial.print(z_g); Serial.print("\n");
         }
     }
 
