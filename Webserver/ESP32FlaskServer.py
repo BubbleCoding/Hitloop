@@ -87,6 +87,10 @@ def get_all_devices():
 def simulation_page():
     return render_template('simulation.html')
 
+@app.route('/configure_device')
+def configure_device_page():
+    return render_template('configure_device.html')
+
 @app.route('/reset_devices', methods=['GET'])
 def reset_devices_data():
     global devices_data
