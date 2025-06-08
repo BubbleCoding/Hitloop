@@ -2,8 +2,9 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLEBeacon.h>
+#include "esp_mac.h"
 
-#define DEVICE_NAME     "ESP32-XIAO"
+#define DEVICE_NAME_PREFIX "HitloopBeacon"
 #define BEACON_UUID_REV "A134D0B2-1DA2-1BA7-C94C-E8E00C9F7A2D"
 
 BLEServer* pServer;
@@ -23,6 +24,16 @@ class MyServerCallbacks : public BLEServerCallbacks {
     Serial.println("iBeacon advertising restarted");
   }
 };
+
+String getUniqueDeviceName() {
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_BT);
+
+  char macSuffix[5];
+  snprintf(macSuffix, sizeof(macSuffix), "%02X%02X", mac[4], mac[5]);
+  
+  return String(DEVICE_NAME_PREFIX) + "-" + macSuffix;
+}
 
 void init_beacon() {
   BLEAdvertising* pAdvertising = pServer->getAdvertising();
@@ -52,7 +63,11 @@ void setup() {
   Serial.println("Initializing...");
   Serial.flush();
 
-  BLEDevice::init(DEVICE_NAME);
+  String deviceName = getUniqueDeviceName();
+  Serial.print("Device name set to: ");
+  Serial.println(deviceName);
+
+  BLEDevice::init(deviceName.c_str());
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);  // Max TX power
 
   pServer = BLEDevice::createServer();
