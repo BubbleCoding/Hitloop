@@ -32,9 +32,9 @@ class RssiValue(db.Model):
 
 class ScannerMovement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    accel_x = db.Column(db.Float, nullable=False)
-    accel_y = db.Column(db.Float, nullable=False)
-    accel_z = db.Column(db.Float, nullable=False)
+    avg_angle_xz = db.Column(db.Float, nullable=False)
+    avg_angle_yz = db.Column(db.Float, nullable=False)
+    total_movement = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     scanner_id = db.Column(db.Integer, db.ForeignKey('scanner.id'), nullable=False)
 
@@ -84,14 +84,14 @@ def receive_data():
             db.session.commit()
 
         if isinstance(movement_payload, dict):
-            accel_x = movement_payload.get('accelerationX')
-            accel_y = movement_payload.get('accelerationY')
-            accel_z = movement_payload.get('accelerationZ')
-            if accel_x is not None and accel_y is not None and accel_z is not None:
+            avg_angle_xz = movement_payload.get('avgAngleXZ')
+            avg_angle_yz = movement_payload.get('avgAngleYZ')
+            total_movement = movement_payload.get('totalMovement')
+            if avg_angle_xz is not None and avg_angle_yz is not None and total_movement is not None:
                 movement_record = ScannerMovement(
-                    accel_x=accel_x, 
-                    accel_y=accel_y, 
-                    accel_z=accel_z, 
+                    avg_angle_xz=avg_angle_xz, 
+                    avg_angle_yz=avg_angle_yz, 
+                    total_movement=total_movement, 
                     scanner_id=scanner.id
                 )
                 db.session.add(movement_record)
