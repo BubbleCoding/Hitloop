@@ -25,16 +25,14 @@ private:
     Timer scanTimer;
     bool isScanning;
     BLEScan* pBLEScan;
-    String jsonString;
-    int devCounter;
+    String collectedBeaconsJson;
     const WifiManager& wifiManager;
     Config& cfg;
 
     bool startScan() {
         if (isScanning) return false;
         
-        devCounter = 0;
-        jsonString = "";
+        collectedBeaconsJson = "";
         Serial.println("Starting BLE scan...");
         isScanning = true;
       
@@ -47,25 +45,21 @@ private:
         }
     }
     
-    String jsonDataMaker(const String& UUID, float BLEstrength, const String& BeaconName) {
-        devCounter++;
-        String jsonData = "\"" + UUID + "\": {";
-        jsonData += "\"RSSI\": " + String(BLEstrength, 1) + ",";
-        jsonData += "\"Beacon name\": \"" + BeaconName + "\"";
-        jsonData += "},";
-        return jsonData;
-    }
-
-    String jsonDataFixer() {
-        String rawData = jsonString;
-        if (rawData.endsWith(",")) {
-            rawData.remove(rawData.length() - 1);
+    String buildJsonPayload() {
+        // Remove trailing comma from the collected beacons
+        if (collectedBeaconsJson.endsWith(",")) {
+            collectedBeaconsJson.remove(collectedBeaconsJson.length() - 1);
         }
-        String jsonData = "{";
-        jsonData += rawData;
-        jsonData += ",\"Scanner name\": \"" + cfg.scannerName + "\"";
-        jsonData += "}";
-        return jsonData;
+
+        String payload = "{";
+        payload += "\"Scanner name\": \"" + cfg.scannerName + "\",";
+        payload += "\"movement\": 0,"; // Movement is not implemented, default to 0
+        payload += "\"beacons\": {";
+        payload += collectedBeaconsJson;
+        payload += "}"; // close beacons
+        payload += "}"; // close root
+
+        return payload;
     }
 
     void wifiDataSender() {
@@ -74,7 +68,7 @@ private:
             http.begin(cfg.serverUrl);
             http.addHeader("Content-Type", "application/json");
 
-            String finalJson = jsonDataFixer();
+            String finalJson = buildJsonPayload();
             Serial.println("Sending JSON: ");
             Serial.println(finalJson);
 
@@ -131,10 +125,15 @@ public:
     void onDeviceFound(BLEAdvertisedDevice& advertisedDevice) {
         if (advertisedDevice.haveName() && advertisedDevice.getName().startsWith(BEACON_NAME_PREFIX)) {
             float rssi = advertisedDevice.getRSSI();
-            String BeaconName = advertisedDevice.getName();
-            String uuid = advertisedDevice.getAddress().toString();
+            String beaconName = advertisedDevice.getName();
             
-            jsonString += jsonDataMaker(uuid, rssi, BeaconName);
+            // Format: "beacon-name": { "RSSI": -75, "Beacon name": "beacon-name" },
+            String beaconData = "\"" + beaconName + "\": {";
+            beaconData += "\"RSSI\": " + String(rssi, 0) + ",";
+            beaconData += "\"Beacon name\": \"" + beaconName + "\"";
+            beaconData += "},";
+
+            collectedBeaconsJson += beaconData;
         }
     }
 };

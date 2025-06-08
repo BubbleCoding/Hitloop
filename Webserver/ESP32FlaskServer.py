@@ -28,8 +28,8 @@ def index():
 def receive_data():
     data = request.json
     scanner_id = data.get("Scanner name")
-    beacons_payload = data.get("beacons")
-    movement_payload = data.get("movement") # Get the new movement data
+    beacons_payload = data.get("beacons") # Get the nested beacons object
+    movement_payload = data.get("movement")
 
     if not scanner_id:
         return jsonify({"status": "error", "message": "Missing 'Scanner name' in payload"}), 400
@@ -73,9 +73,14 @@ def receive_data():
                 "distance": RSSI_to_distance(rssi)
             }
             print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}, Movement: {devices_data[scanner_id].get('movement')}")
+    elif beacons_payload is None:
+        # It's valid for no beacons to be in range.
+        # Log if movement data is present without beacon data.
+        if movement_payload is not None:
+             print(f"Scanner {scanner_id} reported movement: {devices_data[scanner_id].get('movement')} (No beacon data in this payload)")
     else:
-        # If beacons_payload is not a dict (e.g. not present), we still might have movement data to log
-        print(f"Scanner {scanner_id} reported movement: {devices_data[scanner_id].get('movement')} (No beacon data in this payload or invalid format)")
+        # If beacons_payload is not a dict (e.g. malformed)
+        print(f"Scanner {scanner_id} sent invalid beacon data format. Payload: {data}")
 
     return jsonify({"status": "success"}), 200
 
