@@ -115,7 +115,7 @@ def receive_data():
     if scanner_name not in devices_data:
         devices_data[scanner_name] = {"beacons_observed": {}, "movement": {}}
     
-    devices_data[scanner_name]["timestamp"] = datetime.utcnow().isoformat()
+    devices_data[scanner_name]["timestamp"] = datetime.utcnow().isoformat() + "Z"
     
     if isinstance(movement_payload, dict):
         devices_data[scanner_name]["movement"] = movement_payload

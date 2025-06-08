@@ -62,7 +62,7 @@ function fetchAndUpdateScanners() {
                 tableHtml += `<td>${movementValue}</td>`;
                 
                 // Add scanner's last update time
-                tableHtml += `<td>${new Date(scannerInfo.timestamp).toLocaleTimeString()}</td>`;
+                tableHtml += `<td>${new Date(scannerInfo.timestamp).toLocaleTimeString([], { hour12: false })}</td>`;
                 tableHtml += '</tr>';
             }
             tableHtml += '</tbody></table>';
