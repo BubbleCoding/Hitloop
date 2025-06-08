@@ -1,8 +1,43 @@
 from flask import Flask, request, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import json
+import os
 
 app = Flask(__name__)
+
+# --- Database Configuration ---
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'hitloop.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# --- Database Models ---
+class Scanner(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    rssi_values = db.relationship('RssiValue', backref='scanner', lazy=True)
+    movements = db.relationship('ScannerMovement', backref='scanner', lazy=True)
+
+class Beacon(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    rssi_values = db.relationship('RssiValue', backref='beacon', lazy=True)
+
+class RssiValue(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rssi = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    scanner_id = db.Column(db.Integer, db.ForeignKey('scanner.id'), nullable=False)
+    beacon_id = db.Column(db.Integer, db.ForeignKey('beacon.id'), nullable=False)
+
+class ScannerMovement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    accel_x = db.Column(db.Float, nullable=False)
+    accel_y = db.Column(db.Float, nullable=False)
+    accel_z = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    scanner_id = db.Column(db.Integer, db.ForeignKey('scanner.id'), nullable=False)
+
 
 # Stores all devices with their last known RSSI, BLE device name, and timestamp
 devices_data = {}
@@ -27,60 +62,69 @@ def index():
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
-    scanner_id = data.get("Scanner name")
-    beacons_payload = data.get("beacons") # Get the nested beacons object
+    scanner_name = data.get("Scanner name")
+    beacons_payload = data.get("beacons")
     movement_payload = data.get("movement")
 
-    if not scanner_id:
+    if not scanner_name:
         return jsonify({"status": "error", "message": "Missing 'Scanner name' in payload"}), 400
-    
-    # beacons_payload can be an empty dict if no beacons are seen, which is fine.
-    # movement_payload can be 0 or a positive number.
 
-    if scanner_id not in devices_data:
-        devices_data[scanner_id] = {
-            "beacons_observed": {},
-            # Initialize movement for new scanners, can be overwritten if payload has it
-            "movement": 0 
-        }
-    
-    devices_data[scanner_id]["timestamp"] = datetime.utcnow().isoformat()
-    
-    # Update movement if present in payload
-    if movement_payload is not None: # Check if movement data was sent
-        devices_data[scanner_id]["movement"] = movement_payload
-    elif "movement" not in devices_data[scanner_id]: # Ensure it has a default if never sent
-        devices_data[scanner_id]["movement"] = 0
+    # --- Step 1: Store data in the database (if not simulated) ---
+    if not data.get("simulated"):
+        scanner = Scanner.query.filter_by(name=scanner_name).first()
+        if not scanner:
+            scanner = Scanner(name=scanner_name)
+            db.session.add(scanner)
+            db.session.commit()
 
-    # Process beacons if the payload exists and is a dictionary
+        if isinstance(movement_payload, dict):
+            accel_x = movement_payload.get('accelerationX')
+            accel_y = movement_payload.get('accelerationY')
+            accel_z = movement_payload.get('accelerationZ')
+            if accel_x is not None and accel_y is not None and accel_z is not None:
+                movement_record = ScannerMovement(
+                    accel_x=accel_x, 
+                    accel_y=accel_y, 
+                    accel_z=accel_z, 
+                    scanner_id=scanner.id
+                )
+                db.session.add(movement_record)
+
+        if isinstance(beacons_payload, dict):
+            for beacon_name, beacon_info in beacons_payload.items():
+                rssi = beacon_info.get("RSSI")
+                
+                beacon = Beacon.query.filter_by(name=beacon_name).first()
+                if not beacon:
+                    beacon = Beacon(name=beacon_name)
+                    db.session.add(beacon)
+                    db.session.commit()
+                
+                rssi_record = RssiValue(rssi=rssi, scanner_id=scanner.id, beacon_id=beacon.id)
+                db.session.add(rssi_record)
+
+        db.session.commit()
+
+    # --- Step 2: Update in-memory data for live view ---
+    if scanner_name not in devices_data:
+        devices_data[scanner_name] = {"beacons_observed": {}, "movement": {}}
+    
+    devices_data[scanner_name]["timestamp"] = datetime.utcnow().isoformat()
+    
+    if isinstance(movement_payload, dict):
+        devices_data[scanner_name]["movement"] = movement_payload
+    
     if isinstance(beacons_payload, dict):
-        # Clear previous beacons for this scanner before adding new ones for this update, 
-        # or only update existing ones if preferred.
-        # For simplicity, let's assume the payload is the complete current view of beacons.
-        # devices_data[scanner_id]["beacons_observed"].clear() # Optional: if payload is always exhaustive
-
+        devices_data[scanner_name]["beacons_observed"].clear() # Keep the live view current
         for beacon_key, beacon_info in beacons_payload.items():
             rssi = beacon_info.get("RSSI")
             beacon_name = beacon_info.get("Beacon name")
-            
-            if rssi is None or beacon_name is None:
-                print(f"Warning: Missing RSSI or Beacon name for beacon '{beacon_key}' from scanner '{scanner_id}'")
-                continue
-            
-            devices_data[scanner_id]["beacons_observed"][beacon_key] = {
-                "rssi": rssi,
-                "beacon_name": beacon_name,
-                "distance": RSSI_to_distance(rssi)
-            }
-            print(f"Scanner {scanner_id} updated beacon {beacon_key}: RSSI={rssi}, Name={beacon_name}, Movement: {devices_data[scanner_id].get('movement')}")
-    elif beacons_payload is None:
-        # It's valid for no beacons to be in range.
-        # Log if movement data is present without beacon data.
-        if movement_payload is not None:
-             print(f"Scanner {scanner_id} reported movement: {devices_data[scanner_id].get('movement')} (No beacon data in this payload)")
-    else:
-        # If beacons_payload is not a dict (e.g. malformed)
-        print(f"Scanner {scanner_id} sent invalid beacon data format. Payload: {data}")
+            if rssi is not None and beacon_name is not None:
+                devices_data[scanner_name]["beacons_observed"][beacon_key] = {
+                    "rssi": rssi,
+                    "beacon_name": beacon_name,
+                    "distance": RSSI_to_distance(rssi)
+                }
 
     return jsonify({"status": "success"}), 200
 
@@ -104,6 +148,8 @@ def reset_devices_data():
     return jsonify({"status": "success", "message": "All device data cleared."}), 200
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(host='0.0.0.0', port=5000, debug=True)
 
     # Know issue here: This does not work for some reason use: 

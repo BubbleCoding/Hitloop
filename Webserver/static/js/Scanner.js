@@ -129,7 +129,8 @@ class Scanner {
         let payload = {
             "Scanner name": this.id,
             "movement": parseFloat(this.movementSinceLastSend.toFixed(2)),
-            "beacons": {}
+            "beacons": {},
+            "simulated": true
         };
         this.movementSinceLastSend = 0;
 
