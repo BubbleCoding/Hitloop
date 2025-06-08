@@ -52,8 +52,3 @@ void loop() {
     process->update();
   }
 }
-
-// Stubs for functions that are not yet refactored
-void wifiReceiveData(){
-  return;
-}
