@@ -18,4 +18,5 @@ services:
     volumes:
       - ./Webserver:/app
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=development       
+      - FLASK_DEBUG=1
