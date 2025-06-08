@@ -2,6 +2,7 @@
 #define CONFIGURATION_H
 
 #include <Preferences.h>
+#include <WiFi.h>
 #include "config.h" // For SCANNER_NAME
 
 #define BOOT_BUTTON_PIN 9
