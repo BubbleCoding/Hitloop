@@ -39,6 +39,12 @@ class ScannerMovement(db.Model):
     scanner_id = db.Column(db.Integer, db.ForeignKey('scanner.id'), nullable=False)
 
 
+# Create the database tables if they don't exist.
+# This is safe to run on every startup, as it won't recreate existing tables.
+with app.app_context():
+    db.create_all()
+
+
 # Stores all devices with their last known RSSI, BLE device name, and timestamp
 devices_data = {}
 
@@ -148,8 +154,6 @@ def reset_devices_data():
     return jsonify({"status": "success", "message": "All device data cleared."}), 200
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(host='0.0.0.0', port=5000, debug=True)
 
     # Know issue here: This does not work for some reason use: 
