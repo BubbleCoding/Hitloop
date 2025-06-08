@@ -28,7 +28,7 @@ private:
     
 public:
     IMUManager() : 
-        readTimer(100), // Read every 100ms
+        readTimer(100) // Read every 100ms
     {}
 
     void setup() override {
@@ -61,7 +61,7 @@ public:
             sumAngleYZ += atan2(y_g, z_g) * 180.0 / PI;
 
             // Accumulate total movement
-            totalMovement += sqrt(pow(x_g, 2) + pow(y_g, 2) + pow(z_g, 2));
+            totalMovement += sqrt(pow(x_g, 2) + pow(y_g, 2) + pow(z_g, 2))-1.0f;
             
             readingCount++;
         }
