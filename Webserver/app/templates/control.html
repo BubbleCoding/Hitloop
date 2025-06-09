@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner Control</title>
+    {% include 'header.html' %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
@@ -59,12 +61,6 @@
 <body>
     <div id="page-title-container">
         <h1>Scanner Control</h1>
-        <nav>
-            <a href="{{ url_for('main.index') }}">Home</a>
-            <a href="{{ url_for('main.simulation_page') }}">Simulation</a>
-            <a href="{{ url_for('main.configure_device_page') }}">Configure</a>
-            <a href="{{ url_for('main.control_page') }}">Control</a>
-        </nav>
     </div>
     <div id="main-content-container">
         <div id="led-control-panel" class="side-panel">
