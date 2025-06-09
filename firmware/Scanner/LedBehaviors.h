@@ -21,9 +21,9 @@ protected:
     LedBehavior(const char* type) : type(type) {}
     Adafruit_NeoPixel* pixels;
     uint32_t scaleColor(uint32_t color, uint8_t brightness) {
-        uint8_t r = (uint8_t)((color >> 16) * brightness / 255);
-        uint8_t g = (uint8_t)((color >> 8) * brightness / 255);
-        uint8_t b = (uint8_t)(color * brightness / 255);
+        uint8_t r = (uint8_t)(((color >> 16) & 0xFF) * brightness / 255);
+        uint8_t g = (uint8_t)(((color >> 8) & 0xFF) * brightness / 255);
+        uint8_t b = (uint8_t)((color & 0xFF) * brightness / 255);
         return pixels->Color(r, g, b);
     }
 };
@@ -96,26 +96,45 @@ private:
 class HeartBeatBehavior : public LedBehavior {
 public:
     uint32_t color;
-    unsigned long period;
-    HeartBeatBehavior(uint32_t color, unsigned long period) 
-        : LedBehavior("HeartBeat"), color(color), period(period), periodTimer(period), beatTimer(50), state(IDLE) {}
+    unsigned long pulse_duration;
+    unsigned long pulse_interval;
+
+    HeartBeatBehavior(uint32_t color = 0, unsigned long duration = 770, unsigned long interval = 2000) 
+        : LedBehavior("HeartBeat"), 
+          color(color), 
+          pulse_duration(duration), 
+          pulse_interval(interval), 
+          intervalTimer(interval), 
+          beatTimer(0), // interval is set dynamically
+          state(IDLE) {}
 
     void updateParams(JsonObject& params) override {
-        color = hexToColor(params["color"].as<String>());
-        period = params["period"].as<unsigned long>();
+        if (params.containsKey("color")) {
+            color = hexToColor(params["color"].as<String>());
+        }
+        if (params.containsKey("pulse_duration")) {
+            pulse_duration = params["pulse_duration"].as<unsigned long>();
+        }
+        if (params.containsKey("pulse_interval")) {
+            pulse_interval = params["pulse_interval"].as<unsigned long>();
+            intervalTimer.interval = pulse_interval;
+        }
     }
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
-        periodTimer.reset();
+        state = IDLE;
+        intervalTimer.reset();
+        this->pixels->clear();
+        this->pixels->show();
     }
 
     void update() override {
         switch (state) {
             case IDLE:
-                if (periodTimer.checkAndReset()) {
+                if (intervalTimer.checkAndReset()) {
                     state = FADE_IN_1;
-                    beatTimer.interval = 60; // Fast fade in
+                    beatTimer.interval = getScaledDuration(FADE_IN_1_DUR);
                     beatTimer.reset();
                 }
                 break;
@@ -125,7 +144,7 @@ public:
                     pixels->fill(color);
                     pixels->show();
                     state = FADE_OUT_1;
-                    beatTimer.interval = 150;
+                    beatTimer.interval = getScaledDuration(FADE_OUT_1_DUR);
                     beatTimer.reset();
                 } else {
                     uint8_t brightness = (elapsed * 255) / beatTimer.interval;
@@ -140,7 +159,7 @@ public:
                     pixels->clear();
                     pixels->show();
                     state = PAUSE;
-                    beatTimer.interval = 100; // Pause for 100ms
+                    beatTimer.interval = getScaledDuration(PAUSE_DUR);
                     beatTimer.reset();
                 } else {
                     uint8_t brightness = 255 - (elapsed * 255 / beatTimer.interval);
@@ -152,7 +171,7 @@ public:
             case PAUSE:
                 if (beatTimer.checkAndReset()) {
                     state = FADE_IN_2;
-                    beatTimer.interval = 60;
+                    beatTimer.interval = getScaledDuration(FADE_IN_2_DUR);
                     beatTimer.reset();
                 }
                 break;
@@ -162,7 +181,7 @@ public:
                     pixels->fill(color);
                     pixels->show();
                     state = FADE_OUT_2;
-                    beatTimer.interval = 400; // Slower fade out
+                    beatTimer.interval = getScaledDuration(FADE_OUT_2_DUR);
                     beatTimer.reset();
                 } else {
                     uint8_t brightness = (elapsed * 255) / beatTimer.interval;
@@ -187,11 +206,30 @@ public:
         }
     }
 
+    void setParams(uint32_t c, unsigned long dur, unsigned long inter) {
+        color = c;
+        pulse_duration = dur;
+        pulse_interval = inter;
+        intervalTimer.interval = inter;
+    }
+
 private:
     enum BeatState { IDLE, FADE_IN_1, FADE_OUT_1, PAUSE, FADE_IN_2, FADE_OUT_2 };
     BeatState state;
-    Timer periodTimer; // Time between heartbeats
+    Timer intervalTimer; // Time between heartbeats
     Timer beatTimer;   // Time for individual fades/pauses
+
+    static const unsigned long BASE_DURATION = 770;
+    static const unsigned long FADE_IN_1_DUR = 60;
+    static const unsigned long FADE_OUT_1_DUR = 150;
+    static const unsigned long PAUSE_DUR = 100;
+    static const unsigned long FADE_IN_2_DUR = 60;
+    static const unsigned long FADE_OUT_2_DUR = 400;
+
+    unsigned long getScaledDuration(unsigned long base_part_duration) {
+        if (pulse_duration == 0 || BASE_DURATION == 0) return 0;
+        return (base_part_duration * pulse_duration) / BASE_DURATION;
+    }
 };
 
 

@@ -28,6 +28,8 @@ public:
             cfg.wifiConnected = isConnected;
             if (isConnected) {
                 Serial.println("\nConnected to WiFi");
+                WifiConnectedEvent event;
+                eventManager->publish(event);
             }
         }
 

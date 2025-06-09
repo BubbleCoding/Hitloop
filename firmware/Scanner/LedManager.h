@@ -2,6 +2,7 @@
 #define LED_MANAGER_H
 
 #include <Adafruit_NeoPixel.h>
+#include <Ticker.h>
 #include "Process.h"
 #include "config.h"
 #include "LedBehaviors.h"
@@ -12,6 +13,7 @@ public:
     }
 
     ~LedManager() {
+        ledTicker.detach();
     }
 
     void setBehavior(LedBehavior* newBehavior) {
@@ -25,6 +27,8 @@ public:
         Process::setup(em);
         pixels.begin();
         pixels.setBrightness(127); // Don't set too high to avoid high current draw
+        // Use a lambda to call the member function, passing 'this'
+        ledTicker.attach_ms(20, +[](LedManager* instance) { instance->update(); }, this);
     }
 
     void update() override {
@@ -36,6 +40,9 @@ public:
     // Public members for access by BleManager
     Adafruit_NeoPixel pixels;
     LedBehavior* currentBehavior;
+
+private:
+    Ticker ledTicker;
 };
 
 #endif // LED_MANAGER_H 
