@@ -36,13 +36,16 @@ def index():
 def receive_data():
     global next_slot_time_ms
     data = request.json
-    scanner_id = data.get("scanner_id")
+    
+    # Standardize scanner ID lookup
+    scanner_id = data.get("scanner_id") or data.get("Scanner name")
+
     beacons_payload = data.get("beacons")
     movement_payload = data.get("movement")
 
     if not scanner_id:
         print(f"Received invalid data payload: {data}")
-        return jsonify({"status": "error", "message": "Missing 'scanner_id' in payload"}), 400
+        return jsonify({"status": "error", "message": "Missing scanner identifier in payload"}), 400
 
     if not data.get("simulated"):
         scanner = Scanner.query.filter_by(name=scanner_id).first()
@@ -51,6 +54,7 @@ def receive_data():
             db.session.add(scanner)
             db.session.commit()
 
+        # Only store dict-based movement payloads in the DB
         if isinstance(movement_payload, dict):
             avg_angle_xz = movement_payload.get('avgAngleXZ')
             avg_angle_yz = movement_payload.get('avgAngleYZ')
@@ -64,6 +68,7 @@ def receive_data():
                 )
                 db.session.add(movement_record)
 
+        # Only store list-based beacon payloads in the DB
         if isinstance(beacons_payload, list):
             for beacon_info in beacons_payload:
                 rssi = beacon_info.get("rssi")
@@ -80,16 +85,35 @@ def receive_data():
         
         db.session.commit()
 
+    # --- Standardize and update in-memory data for live view ---
     if scanner_id not in devices_data:
         devices_data[scanner_id] = {"beacons_observed": {}, "movement": {}}
     
     devices_data[scanner_id]["timestamp"] = datetime.utcnow().isoformat() + "Z"
     
+    # Standardize movement payload
     if isinstance(movement_payload, dict):
         devices_data[scanner_id]["movement"] = movement_payload
-    
-    if isinstance(beacons_payload, list):
-        devices_data[scanner_id]["beacons_observed"].clear()
+    elif isinstance(movement_payload, (int, float)):
+        # Convert simulated movement number to the dict format expected by the frontend
+        devices_data[scanner_id]["movement"] = {
+            "avgAngleXZ": 0,
+            "avgAngleYZ": 0,
+            "totalMovement": movement_payload
+        }
+
+    # Standardize beacons payload
+    devices_data[scanner_id]["beacons_observed"].clear()
+    if isinstance(beacons_payload, dict): # From simulation
+        for beacon_key, beacon_info in beacons_payload.items():
+            rssi = beacon_info.get("RSSI")
+            if rssi is not None:
+                devices_data[scanner_id]["beacons_observed"][beacon_key] = {
+                    "rssi": rssi,
+                    "beacon_name": beacon_info.get("Beacon name", beacon_key),
+                    "distance": RSSI_to_distance(rssi)
+                }
+    elif isinstance(beacons_payload, list): # From real device
         for beacon_info in beacons_payload:
             rssi = beacon_info.get("rssi")
             beacon_name = beacon_info.get("name")
@@ -162,7 +186,62 @@ def configure_scanner(scanner_id):
 
 @main_bp.route('/devices', methods=['GET'])
 def get_all_devices():
-    return jsonify(devices_data)
+    """
+    Returns a unified list of active devices.
+    - Real devices are fetched from the database based on recent activity.
+    - Simulated devices are pulled from the in-memory dictionary.
+    - In-memory data takes precedence to ensure the live view is current.
+    """
+    five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+
+    # 1. Get real, active scanners from the database
+    recent_rssi_ids = db.session.query(RssiValue.scanner_id).filter(RssiValue.timestamp >= five_minutes_ago).distinct()
+    recent_movement_ids = db.session.query(ScannerMovement.scanner_id).filter(ScannerMovement.timestamp >= five_minutes_ago).distinct()
+    active_db_scanner_ids = recent_rssi_ids.union(recent_movement_ids)
+    active_db_scanners = db.session.query(Scanner).filter(Scanner.id.in_(active_db_scanner_ids)).all()
+
+    db_devices = {}
+    for scanner in active_db_scanners:
+        scanner_data = {
+            "timestamp": None,
+            "movement": {},
+            "beacons_observed": {}
+        }
+        latest_movement = ScannerMovement.query.filter_by(scanner_id=scanner.id).order_by(ScannerMovement.timestamp.desc()).first()
+        latest_rssi_timestamp = db.session.query(func.max(RssiValue.timestamp)).filter_by(scanner_id=scanner.id).scalar()
+
+        if latest_movement:
+            scanner_data["movement"] = {
+                "avgAngleXZ": latest_movement.avg_angle_xz,
+                "avgAngleYZ": latest_movement.avg_angle_yz,
+                "totalMovement": latest_movement.total_movement,
+            }
+        if latest_rssi_timestamp:
+            latest_rssi_records = RssiValue.query.filter_by(scanner_id=scanner.id, timestamp=latest_rssi_timestamp).all()
+            for record in latest_rssi_records:
+                beacon = Beacon.query.get(record.beacon_id)
+                if beacon:
+                    scanner_data["beacons_observed"][beacon.name] = {
+                        "rssi": record.rssi,
+                        "beacon_name": beacon.name,
+                        "distance": RSSI_to_distance(record.rssi),
+                    }
+        
+        last_update_time = max(
+            latest_movement.timestamp if latest_movement else datetime.min,
+            latest_rssi_timestamp if latest_rssi_timestamp else datetime.min
+        )
+        if last_update_time != datetime.min:
+            scanner_data["timestamp"] = last_update_time.isoformat() + "Z"
+        
+        db_devices[scanner.name] = scanner_data
+
+    # 2. Merge with in-memory data (which includes simulated devices)
+    # The spread operator `**` merges dictionaries, with keys from the second
+    # dictionary (devices_data) overwriting keys from the first (db_devices).
+    unified_devices = {**db_devices, **devices_data}
+    
+    return jsonify(unified_devices)
 
 @main_bp.route('/scanners', methods=['GET'])
 def get_all_scanners():
