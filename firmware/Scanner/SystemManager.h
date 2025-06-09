@@ -7,34 +7,28 @@
 #include "Configuration.h"
 #include "config.h"
 #include "EventManager.h"
-#include "SharedState.h"
 
 class SystemManager : public Process {
 private:
-    Config& cfg;
+    Configuration& cfg;
     Timer debounceTimer;
     int lastButtonState;
     int currentButtonState;
     Timer configCheckTimer;
-    SharedState& sharedState;
 
 public:
-    SystemManager(Config& config, SharedState& state) 
+    SystemManager(Configuration& config) 
         : cfg(config), 
         debounceTimer(50), // 50ms debounce delay
         lastButtonState(HIGH),
         currentButtonState(HIGH),
-        configCheckTimer(500),
-        sharedState(state)
+        configCheckTimer(500)
     {}
 
     void setup(EventManager* em) override {
         Process::setup(em);
         pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
-
-        // Populate the initial shared state
-        sharedState.macAddress = WiFi.macAddress();
-        Serial.println("SystemManager Initialized. MAC: " + sharedState.macAddress);
+        Serial.println("SystemManager Initialized.");
     }
 
     void update() override {

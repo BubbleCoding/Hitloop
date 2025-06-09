@@ -8,7 +8,7 @@
 
 class HTTPManager : public Process {
 public:
-    HTTPManager(Config& config) 
+    HTTPManager(Configuration& config) 
         : cfg(config) {}
     
     void setup(EventManager* em) override {
@@ -48,7 +48,7 @@ private:
         http.end();
     }
 
-    Config& cfg;
+    Configuration& cfg;
 };
 
 #endif // HTTP_MANAGER_H 

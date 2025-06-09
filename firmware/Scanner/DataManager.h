@@ -7,11 +7,11 @@
 #include "IMUManager.h"
 #include "EventManager.h"
 #include "config.h"
-#include "SharedState.h"
+#include "Configuration.h"
 
 class DataManager : public Process {
 public:
-    DataManager(SharedState& state) : sharedState(state) {}
+    DataManager(Configuration& config) : cfg(config) {}
     
     void setup(EventManager* em) override {
         Process::setup(em);
@@ -31,13 +31,14 @@ public:
 
 private:
     void processScanResults(ScanCompleteEvent& scanEvent) {
-        if (!sharedState.wifiConnected) {
+        if (!cfg.wifiConnected) {
             Serial.println("WiFi not connected, skipping data processing.");
             return;
         }
 
         JsonDocument doc;
-        doc["scanner_id"] = sharedState.macAddress;
+        doc["scanner_id"] = cfg.macAddress;
+        doc["scanner_name"] = cfg.scannerName;
 
         JsonArray beacons = doc.createNestedArray("beacons");
         BLEUUID serviceUUID(BEACON_SERVICE_UUID);
@@ -67,7 +68,7 @@ private:
         eventManager->publish(httpEvent);
     }
 
-    SharedState& sharedState;
+    Configuration& cfg;
 };
 
 #endif // DATA_MANAGER_H 

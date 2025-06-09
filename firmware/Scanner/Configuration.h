@@ -7,12 +7,14 @@
 
 #define BOOT_BUTTON_PIN 9
 
-class Config {
+class Configuration {
 public:
   String ssid;
   String password;
   String serverUrl;
   String scannerName;
+  String macAddress;
+  bool wifiConnected = false;
 
   void loadConfig() {
     preferences.begin("config", true); // Start preferences in read-only mode
@@ -34,6 +36,10 @@ public:
     scannerName = String(SCANNER_NAME) + "-" + macSuffix;
     Serial.print("Scanner name set to: ");
     Serial.println(scannerName);
+
+    macAddress = WiFi.macAddress();
+    Serial.print("Scanner ID set to: ");
+    Serial.println(macAddress);
   }
 
   void clearConfig() {

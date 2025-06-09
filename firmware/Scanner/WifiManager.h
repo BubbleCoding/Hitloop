@@ -4,18 +4,16 @@
 #include "Process.h"
 #include "Timer.h"
 #include "Configuration.h"
-#include "SharedState.h"
 #include <WiFi.h>
 
 class WifiManager : public Process {
 private:
     Timer wifiCheckTimer;
-    Config& cfg;
-    SharedState& sharedState;
+    Configuration& cfg;
 
 public:
-    WifiManager(Config& config, SharedState& state) 
-        : wifiCheckTimer(500), cfg(config), sharedState(state) {}
+    WifiManager(Configuration& config) 
+        : wifiCheckTimer(500), cfg(config) {}
 
     void setup(EventManager* em) override {
         Process::setup(em);
@@ -26,8 +24,8 @@ public:
     void update() override {
         bool isConnected = (WiFi.status() == WL_CONNECTED);
 
-        if (isConnected != sharedState.wifiConnected) {
-            sharedState.wifiConnected = isConnected;
+        if (isConnected != cfg.wifiConnected) {
+            cfg.wifiConnected = isConnected;
             if (isConnected) {
                 Serial.println("\nConnected to WiFi");
             }
@@ -41,7 +39,7 @@ public:
     }
 
     bool isConnected() const {
-        return sharedState.wifiConnected;
+        return cfg.wifiConnected;
     }
 
     String getMacAddress() const {

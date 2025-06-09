@@ -22,24 +22,24 @@ Commands van de server uitvoeren.                         |
 #include "DataManager.h"
 #include "BleManager.h"
 #include "EventManager.h"
-#include "SharedState.h"
+#include "Process.h"
 
-Config config;
+// Instantiate configuration and state objects
+Configuration config;
 
 // Global pointer for BLE callback
 BleManager* g_bleManager = nullptr;
 // Central Event Manager
 EventManager eventManager;
-SharedState sharedState;
 
-// Create instances of all the processes
-SystemManager systemManager(config, sharedState);
-WifiManager wifiManager(config, sharedState);
+// Instantiate managers
+SystemManager systemManager(config);
+WifiManager wifiManager(config);
 LedManager ledManager;
 VibrationManager vibrationManager;
 IMUManager imuManager;
 BleManager bleManager(&imuManager);
-DataManager dataManager(sharedState);
+DataManager dataManager(config);
 HTTPManager httpManager(config);
 BehaviorManager behaviorManager(&ledManager, &vibrationManager);
 
