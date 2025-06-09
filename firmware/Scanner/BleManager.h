@@ -6,8 +6,8 @@
 #include "Process.h"
 #include "Timer.h"
 #include "config.h"
-#include "WifiManager.h"
 #include "EventManager.h"
+#include "IMUManager.h"
 
 // Forward declaration for the global pointer
 class BleManager;
@@ -18,13 +18,13 @@ void scanCompleteCallback(BLEScanResults results);
 
 class BleManager : public Process {
 public:
-    BleManager(WifiManager& wifi)
+    BleManager(IMUManager* imu)
         : Process(),
-          wifiManager(wifi),
+          imuManager(imu),
           scanTimer(SCAN_INTERVAL_MS),
           pBLEScan(nullptr)
     {
-        g_bleManager = this; // Assign this instance to the global pointer
+        g_bleManager = this;
     }
 
     void setup(EventManager* em) override {
@@ -44,29 +44,28 @@ public:
         }
     }
 
-    // This method is called by the global scanCompleteCallback
     void onScanComplete(BLEScanResults results) {
         Serial.printf("Scan complete! Found %d devices.\n", results.getCount());
-        if (wifiManager.isConnected()) {
-            ScanCompleteEvent event(results);
-            eventManager->publish(event);
-        } else {
-            Serial.println("WiFi not connected, skipping event publish.");
+        
+        float avgAngleXZ = 0.0, avgAngleYZ = 0.0, totalMovement = 0.0;
+        if (imuManager) {
+            avgAngleXZ = imuManager->getAverageAngleXZ();
+            avgAngleYZ = imuManager->getAverageAngleYZ();
+            totalMovement = imuManager->getTotalMovement();
+            imuManager->prepareForNextInterval();
         }
+        
+        ScanCompleteEvent event(results, avgAngleXZ, avgAngleYZ, totalMovement);
+        eventManager->publish(event);
     }
 
 private:
     void startScan() {
-        // The isScanning() check is removed as it's not available.
-        // The scanTimer logic prevents overlapping scans.
         Serial.println("Starting BLE scan...");
-        
-        // The DataManager will handle getting data from the IMU at the right time.
         pBLEScan->start(SCAN_DURATION, scanCompleteCallback);
     }
 
-    // Member variables
-    WifiManager& wifiManager;
+    IMUManager* imuManager;
     Timer scanTimer;
     BLEScan* pBLEScan;
 };

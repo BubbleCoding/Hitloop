@@ -14,13 +14,13 @@ public:
 
     void setup(EventManager* em) override {
         Process::setup(em);
-        eventManager->subscribe(EVT_HTTP_RESPONSE, this);
+        eventManager->subscribe(EVT_HTTP_RESPONSE_RECEIVED, this);
     }
 
     void onEvent(Event& event) override {
-        if (event.type == EVT_HTTP_RESPONSE) {
+        if (event.type == EVT_HTTP_RESPONSE_RECEIVED) {
             HttpResponseEvent& e = static_cast<HttpResponseEvent&>(event);
-            handleServerResponse(e.responsePayload);
+            handleServerResponse(e.response);
         }
     }
 

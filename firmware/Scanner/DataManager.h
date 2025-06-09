@@ -5,14 +5,13 @@
 #include <BLEAdvertisedDevice.h>
 #include "Process.h"
 #include "IMUManager.h"
-#include "WifiManager.h"
 #include "EventManager.h"
 #include "config.h"
+#include "SharedState.h"
 
 class DataManager : public Process {
 public:
-    DataManager(IMUManager* imu, WifiManager* wifi) 
-        : imuManager(imu), wifiManager(wifi) {}
+    DataManager(SharedState& state) : sharedState(state) {}
     
     void setup(EventManager* em) override {
         Process::setup(em);
@@ -22,28 +21,29 @@ public:
     void onEvent(Event& event) override {
         if (event.type == EVT_SCAN_COMPLETE) {
             ScanCompleteEvent& e = static_cast<ScanCompleteEvent&>(event);
-            processScanResults(e.results);
+            processScanResults(e);
         }
     }
     
     void update() override {
-        // This manager is reactive, does nothing in update
+        // Reactive
     }
 
 private:
-    void processScanResults(BLEScanResults& results) {
-        if (imuManager) {
-            imuManager->prepareForNextInterval();
+    void processScanResults(ScanCompleteEvent& scanEvent) {
+        if (!sharedState.wifiConnected) {
+            Serial.println("WiFi not connected, skipping data processing.");
+            return;
         }
 
         JsonDocument doc;
-        doc["scanner_id"] = wifiManager->getMacAddress();
+        doc["scanner_id"] = sharedState.macAddress;
 
         JsonArray beacons = doc.createNestedArray("beacons");
         BLEUUID serviceUUID(BEACON_SERVICE_UUID);
 
-        for (int i = 0; i < results.getCount(); i++) {
-            BLEAdvertisedDevice device = results.getDevice(i);
+        for (int i = 0; i < scanEvent.results.getCount(); i++) {
+            BLEAdvertisedDevice device = scanEvent.results.getDevice(i);
             if (device.isAdvertisingService(serviceUUID)) {
                 JsonObject beacon = beacons.add<JsonObject>();
                 if (device.haveName()) {
@@ -55,13 +55,11 @@ private:
             }
         }
 
-        if (imuManager) {
-            JsonObject movement = doc.createNestedObject("movement");
-            movement["avgAngleXZ"] = imuManager->getAverageAngleXZ();
-            movement["avgAngleYZ"] = imuManager->getAverageAngleYZ();
-            movement["totalMovement"] = imuManager->getTotalMovement();
-        }
-
+        JsonObject movement = doc.createNestedObject("movement");
+        movement["avgAngleXZ"] = scanEvent.avgAngleXZ;
+        movement["avgAngleYZ"] = scanEvent.avgAngleYZ;
+        movement["totalMovement"] = scanEvent.totalMovement;
+        
         String jsonBuffer;
         serializeJson(doc, jsonBuffer);
         
@@ -69,8 +67,7 @@ private:
         eventManager->publish(httpEvent);
     }
 
-    IMUManager* imuManager;
-    WifiManager* wifiManager;
+    SharedState& sharedState;
 };
 
 #endif // DATA_MANAGER_H 

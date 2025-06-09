@@ -6,6 +6,8 @@
 #include "Timer.h"
 #include "Configuration.h"
 #include "config.h"
+#include "EventManager.h"
+#include "SharedState.h"
 
 class SystemManager : public Process {
 private:
@@ -14,20 +16,25 @@ private:
     int lastButtonState;
     int currentButtonState;
     Timer configCheckTimer;
+    SharedState& sharedState;
 
 public:
-    SystemManager(Config& config) : 
-        cfg(config), 
+    SystemManager(Config& config, SharedState& state) 
+        : cfg(config), 
         debounceTimer(50), // 50ms debounce delay
         lastButtonState(HIGH),
         currentButtonState(HIGH),
-        configCheckTimer(500)
+        configCheckTimer(500),
+        sharedState(state)
     {}
 
     void setup(EventManager* em) override {
         Process::setup(em);
         pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
-        Serial.println("Press BOOT button (PIN 9) to enter config mode at any time.");
+
+        // Populate the initial shared state
+        sharedState.macAddress = WiFi.macAddress();
+        Serial.println("SystemManager Initialized. MAC: " + sharedState.macAddress);
     }
 
     void update() override {

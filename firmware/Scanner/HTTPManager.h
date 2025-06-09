@@ -19,7 +19,7 @@ public:
     void onEvent(Event& event) override {
         if (event.type == EVT_DATA_READY_FOR_HTTP) {
             DataReadyForHttpEvent& e = static_cast<DataReadyForHttpEvent&>(event);
-            sendData(e.jsonPayload);
+            sendData(e.jsonData);
         }
     }
 

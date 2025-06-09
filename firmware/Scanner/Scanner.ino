@@ -22,49 +22,43 @@ Commands van de server uitvoeren.                         |
 #include "DataManager.h"
 #include "BleManager.h"
 #include "EventManager.h"
+#include "SharedState.h"
 
-Config cfg;
+Config config;
 
 // Global pointer for BLE callback
 BleManager* g_bleManager = nullptr;
 // Central Event Manager
 EventManager eventManager;
+SharedState sharedState;
 
-// Process managers
-std::vector<Process*> processes;
+// Create instances of all the processes
+SystemManager systemManager(config, sharedState);
+WifiManager wifiManager(config, sharedState);
+LedManager ledManager;
+VibrationManager vibrationManager;
+IMUManager imuManager;
+BleManager bleManager(&imuManager);
+DataManager dataManager(sharedState);
+HTTPManager httpManager(config);
+BehaviorManager behaviorManager(&ledManager, &vibrationManager);
+
+Process* processes[] = {
+    &systemManager,
+    &wifiManager,
+    &ledManager,
+    &vibrationManager,
+    &imuManager,
+    &bleManager,
+    &dataManager,
+    &httpManager,
+    &behaviorManager
+};
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
-  cfg.loadConfig();
+  config.loadConfig();
 
-  // --- Instantiate all process managers ---
-  SystemManager* systemManager = new SystemManager(cfg);
-  processes.push_back(systemManager);
-  
-  WifiManager* wifiManager = new WifiManager(cfg);
-  processes.push_back(wifiManager);
-  
-  IMUManager* imuManager = new IMUManager();
-  processes.push_back(imuManager);
-
-  LedManager* ledManager = new LedManager();
-  processes.push_back(ledManager);
-  
-  VibrationManager* vibrationManager = new VibrationManager();
-  processes.push_back(vibrationManager);
-  
-  BehaviorManager* behaviorManager = new BehaviorManager(ledManager, vibrationManager);
-  processes.push_back(behaviorManager);
-  
-  HTTPManager* httpManager = new HTTPManager(cfg);
-  processes.push_back(httpManager);
-  
-  DataManager* dataManager = new DataManager(imuManager, wifiManager);
-  processes.push_back(dataManager);
-  
-  BleManager* bleManager = new BleManager(*wifiManager);
-  processes.push_back(bleManager);
-  
   // Initialize all processes and pass them the event manager
   for (auto process : processes) {
     process->setup(&eventManager);
