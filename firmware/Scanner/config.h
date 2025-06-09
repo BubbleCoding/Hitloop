@@ -16,5 +16,11 @@
 
 #define BOOT_BUTTON_PIN 9
 
+#define IMU_UPDATE_INTERVAL_MS 10
+#define NUM_ANGLE_SAMPLES 10
+
+#define LED_PIN D1
+#define LED_COUNT 6
+
 #endif
 

@@ -16,6 +16,7 @@ Commands van de server uitvoeren.                         |
 #include "WifiManager.h"
 #include "BleManager.h"
 #include "IMUManager.h"
+#include "LedManager.h"
 
 Config cfg;
 
@@ -44,6 +45,8 @@ void setup() {
   // The BleManager depends on the WifiManager, Config, and IMUManager
   bleManager = new BleManager(*wifiManager, cfg, imuManager);
   processes.push_back(bleManager);
+
+  processes.push_back(new LedManager());
   
   // Initialize all processes
   for (auto process : processes) {
