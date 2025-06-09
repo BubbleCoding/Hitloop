@@ -17,6 +17,7 @@ Commands van de server uitvoeren.                         |
 #include "BleManager.h"
 #include "IMUManager.h"
 #include "LedManager.h"
+#include "VibrationManager.h"
 
 Config cfg;
 
@@ -47,6 +48,7 @@ void setup() {
   processes.push_back(bleManager);
 
   processes.push_back(new LedManager());
+  processes.push_back(new VibrationManager());
   
   // Initialize all processes
   for (auto process : processes) {

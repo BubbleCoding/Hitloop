@@ -22,5 +22,7 @@
 #define LED_PIN D1
 #define LED_COUNT 6
 
+#define VIBRATION_MOTOR_PIN D0
+
 #endif
 
