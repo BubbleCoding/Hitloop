@@ -33,3 +33,24 @@ graph TD
 The Beacon Controller server is a Python Flask application. It receives data from the iBeacon and the accelerometer and sends it to the music generation service.
 
 The server can be polled to get the current state of the controllers. Each controller can also ask the server for instructions to alter its behaviour based on it's current state and the state of the crowd.
+
+This is the documentation for the HitLoop project.
+
+## Table of Contents
+
+- [Hardware](./hardware.md)
+- [API Reference](./api.md)
+- [Simulation](./simulation.md)
+- [Firmware Flashing](./firmware.md)
+- [Control Page](./control.md)
+
+---
+`./hardware.md` - Details about the scanner and beacon controller hardware.
+`./api.md` - Comprehensive reference for the server API endpoints.
+`./simulation.md` - Guide to using the web-based device simulation.
+`./firmware.md` - Instructions for flashing firmware to the hardware.
+`./control.md` - Manual for the real-time device control interface.
+---
+
+## HitLoop
+A system for interactive wearables.
