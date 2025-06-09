@@ -43,6 +43,9 @@ This is the documentation for the HitLoop project.
 - [Simulation](./simulation.md)
 - [Firmware Flashing](./firmware.md)
 - [Control Page](./control.md)
+- [Device Configuration](./device_configuration.md)
+- [Firmware Architecture](./firmware_architecture.md)
+- [Webserver Architecture](./webserver_architecture.md)
 
 ---
 `./hardware.md` - Details about the scanner and beacon controller hardware.
@@ -50,6 +53,9 @@ This is the documentation for the HitLoop project.
 `./simulation.md` - Guide to using the web-based device simulation.
 `./firmware.md` - Instructions for flashing firmware to the hardware.
 `./control.md` - Manual for the real-time device control interface.
+`./device_configuration.md` - Guide for setting device credentials via WebSerial.
+`./firmware_architecture.md` - An overview of the firmware's design and data flow.
+`./webserver_architecture.md` - An overview of the webserver's structure and database schema.
 ---
 
 ## HitLoop
