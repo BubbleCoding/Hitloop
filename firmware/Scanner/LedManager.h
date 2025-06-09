@@ -12,13 +12,9 @@ public:
     }
 
     ~LedManager() {
-        delete currentBehavior;
     }
 
     void setBehavior(LedBehavior* newBehavior) {
-        if (currentBehavior) {
-            delete currentBehavior;
-        }
         currentBehavior = newBehavior;
         if (currentBehavior) {
             currentBehavior->setup(pixels);
@@ -28,8 +24,7 @@ public:
     void setup(EventManager* em) override {
         Process::setup(em);
         pixels.begin();
-        pixels.setBrightness(50); // Don't set too high to avoid high current draw
-        setBehavior(new LedsOffBehavior());
+        pixels.setBrightness(127); // Don't set too high to avoid high current draw
     }
 
     void update() override {

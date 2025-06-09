@@ -12,13 +12,9 @@ public:
     }
 
     ~VibrationManager() {
-        delete currentBehavior;
     }
 
     void setBehavior(VibrationBehavior* newBehavior) {
-        if (currentBehavior) {
-            delete currentBehavior;
-        }
         currentBehavior = newBehavior;
         if (currentBehavior) {
             currentBehavior->setup();
@@ -27,7 +23,6 @@ public:
 
     void setup(EventManager* em) override {
         Process::setup(em);
-        setBehavior(new MotorOffBehavior());
     }
 
     void update() override {

@@ -44,6 +44,26 @@ public:
     }
 };
 
+// 2. SolidBehavior
+class SolidBehavior : public LedBehavior {
+public:
+    uint32_t color;
+    SolidBehavior(uint32_t color = 0) : LedBehavior("Solid"), color(color) {}
+
+    void updateParams(JsonObject& params) override {
+        color = hexToColor(params["color"].as<String>());
+    }
+
+    void setup(Adafruit_NeoPixel& pixels) override {
+        LedBehavior::setup(pixels);
+        this->pixels->fill(color);
+        this->pixels->show();
+    }
+    void update() override {
+        // Do nothing, color is set in setup.
+    }
+};
+
 // 2. BreathingBehavior
 class BreathingBehavior : public LedBehavior {
 public:

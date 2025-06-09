@@ -16,10 +16,11 @@ class BehaviorManager : public Process {
 public:
     BehaviorManager(LedManager* led, VibrationManager* vib) 
         : ledManager(led), vibrationManager(vib),
-          ledsOff(), breathing(0), heartBeat(0,0), cycle(0,0),
-          motorOff(), constant(0), burst(0,0)
+          ledsOff(), solid(), breathing(0), heartBeat(0,0), cycle(0,0),
+          motorOff(), constant(0), burst(0,0), pulse(0,0)
     {
         ledBehaviorMap["Off"] = &ledsOff;
+        ledBehaviorMap["Solid"] = &solid;
         ledBehaviorMap["Breathing"] = &breathing;
         ledBehaviorMap["HeartBeat"] = &heartBeat;
         ledBehaviorMap["Cycle"] = &cycle;
@@ -27,11 +28,14 @@ public:
         vibrationBehaviorMap["Off"] = &motorOff;
         vibrationBehaviorMap["Constant"] = &constant;
         vibrationBehaviorMap["Burst"] = &burst;
+        vibrationBehaviorMap["Pulse"] = &pulse;
     }
 
     void setup(EventManager* em) override {
         Process::setup(em);
         eventManager->subscribe(EVT_HTTP_RESPONSE_RECEIVED, this);
+        ledManager->setBehavior(&ledsOff);
+        vibrationManager->setBehavior(&motorOff);
     }
 
     void onEvent(Event& event) override {
@@ -91,6 +95,7 @@ private:
 
     // --- Behavior Pools ---
     LedsOffBehavior ledsOff;
+    SolidBehavior solid;
     BreathingBehavior breathing;
     HeartBeatBehavior heartBeat;
     CycleBehavior cycle;
@@ -98,6 +103,7 @@ private:
     MotorOffBehavior motorOff;
     ConstantVibrationBehavior constant;
     BurstVibrationBehavior burst;
+    PulseVibrationBehavior pulse;
     
     std::map<std::string, LedBehavior*> ledBehaviorMap;
     std::map<std::string, VibrationBehavior*> vibrationBehaviorMap;

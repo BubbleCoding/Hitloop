@@ -62,11 +62,12 @@ public:
     uint8_t intensity;
     unsigned long frequency;
     BurstVibrationBehavior(uint8_t intensity, unsigned long frequency) 
-        : VibrationBehavior("Burst"), intensity(intensity), frequency(frequency), burstTimer(1000 / frequency), motorOn(false) {}
+        : VibrationBehavior("Burst"), intensity(intensity), frequency(frequency), burstTimer(frequency > 0 ? 1000 / frequency : 0), motorOn(false) {}
 
     void updateParams(JsonObject& params) override {
         intensity = params["intensity"].as<uint8_t>();
         frequency = params["frequency"].as<unsigned long>();
+        burstTimer.interval = frequency > 0 ? 1000 / frequency : 0;
     }
 
     void setup() override {
@@ -76,13 +77,44 @@ public:
     }
     
     void update() override {
-        if (burstTimer.checkAndReset()) {
+        if (burstTimer.interval > 0 && burstTimer.checkAndReset()) {
             motorOn = !motorOn;
             analogWrite(VIBRATION_MOTOR_PIN, motorOn ? intensity : 0);
         }
     }
 private:
     Timer burstTimer;
+    bool motorOn;
+};
+
+// 4. PulseVibrationBehavior
+class PulseVibrationBehavior : public VibrationBehavior {
+public:
+    uint8_t intensity;
+    unsigned long frequency;
+    PulseVibrationBehavior(uint8_t intensity = 0, unsigned long frequency = 0) 
+        : VibrationBehavior("Pulse"), intensity(intensity), frequency(frequency), pulseTimer(frequency > 0 ? 1000 / frequency : 0), motorOn(false) {}
+
+    void updateParams(JsonObject& params) override {
+        intensity = params["intensity"].as<uint8_t>();
+        frequency = params["frequency"].as<unsigned long>();
+        pulseTimer.interval = frequency > 0 ? 1000 / frequency : 0;
+    }
+
+    void setup() override {
+        VibrationBehavior::setup();
+        pulseTimer.reset();
+        analogWrite(VIBRATION_MOTOR_PIN, 0);
+    }
+    
+    void update() override {
+        if (pulseTimer.interval > 0 && pulseTimer.checkAndReset()) {
+            motorOn = !motorOn;
+            analogWrite(VIBRATION_MOTOR_PIN, motorOn ? intensity : 0);
+        }
+    }
+private:
+    Timer pulseTimer;
     bool motorOn;
 };
 
