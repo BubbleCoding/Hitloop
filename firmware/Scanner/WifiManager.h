@@ -37,6 +37,10 @@ public:
     bool isConnected() const {
         return connected;
     }
+
+    String getMacAddress() const {
+        return WiFi.macAddress();
+    }
 };
 
 #endif // WIFI_MANAGER_H 

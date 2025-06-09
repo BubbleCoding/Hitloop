@@ -29,6 +29,8 @@ std::vector<Process*> processes;
 WifiManager* wifiManager;
 BleManager* bleManager;
 IMUManager* imuManager;
+LedManager* ledManager;
+VibrationManager* vibrationManager;
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
@@ -43,12 +45,15 @@ void setup() {
   imuManager = new IMUManager();
   processes.push_back(imuManager);
 
-  // The BleManager depends on the WifiManager, Config, and IMUManager
-  bleManager = new BleManager(*wifiManager, cfg, imuManager);
-  processes.push_back(bleManager);
+  ledManager = new LedManager();
+  processes.push_back(ledManager);
 
-  processes.push_back(new LedManager());
-  processes.push_back(new VibrationManager());
+  vibrationManager = new VibrationManager();
+  processes.push_back(vibrationManager);
+
+  // The BleManager depends on the WifiManager, Config, IMUManager, LedManager, and VibrationManager
+  bleManager = new BleManager(*wifiManager, cfg, imuManager, ledManager, vibrationManager);
+  processes.push_back(bleManager);
   
   // Initialize all processes
   for (auto process : processes) {

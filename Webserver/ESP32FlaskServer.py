@@ -132,7 +132,23 @@ def receive_data():
                     "distance": RSSI_to_distance(rssi)
                 }
 
-    return jsonify({"status": "success"}), 200
+    # --- Step 3: Send back control commands ---
+    control_payload = {
+        "led_behavior": {
+            "type": "Breathing",
+            "params": {
+                "color": "#0000FF"  # Blue
+            }
+        },
+        "vibration_behavior": {
+            "type": "Burst",
+            "params": {
+                "intensity": 200,
+                "frequency": 2
+            }
+        }
+    }
+    return jsonify(control_payload), 200
 
 @app.route('/devices', methods=['GET'])
 def get_all_devices():

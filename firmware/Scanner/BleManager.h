@@ -1,164 +1,170 @@
 #ifndef BLE_MANAGER_H
 #define BLE_MANAGER_H
 
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 #include "Process.h"
 #include "Timer.h"
 #include "config.h"
 #include "WifiManager.h"
-#include "Configuration.h"
 #include "IMUManager.h"
-#include <BLEDevice.h>
-#include <BLEScan.h>
-#include <HTTPClient.h>
+#include "LedManager.h"
+#include "VibrationManager.h"
 
+// Forward declaration for the global pointer
 class BleManager;
-
 extern BleManager* g_bleManager;
 
-class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-    void onResult(BLEAdvertisedDevice advertisedDevice);
-};
-
+// The callback function that is executed when the scan is complete.
+// It must be a global or static function.
 void scanCompleteCallback(BLEScanResults results);
 
 class BleManager : public Process {
-private:
-    Timer scanTimer;
-    bool isScanning;
-    BLEScan* pBLEScan;
-    String collectedBeaconsJson;
-    const WifiManager& wifiManager;
-    Config& cfg;
-    IMUManager* imuManager;
-
-    bool startScan() {
-        if (isScanning) return false;
-        
-        if (imuManager) {
-            imuManager->prepareForNextInterval();
-        }
-
-        collectedBeaconsJson = "";
-        Serial.println("Starting BLE scan...");
-        isScanning = true;
-      
-        if(pBLEScan->start(SCAN_TIME, scanCompleteCallback, false)) { // Explicitly non-continuous
-            return true;
-        } else {
-            Serial.println("Error starting scan");
-            isScanning = false;
-            return false;
-        }
-    }
-    
-    String buildJsonPayload() {
-        if (collectedBeaconsJson.endsWith(",")) {
-            collectedBeaconsJson.remove(collectedBeaconsJson.length() - 1);
-        }
-
-        String payload = "{";
-        payload += "\"Scanner name\": \"" + cfg.scannerName + "\",";
-        
-        String movementPayload = "{}";
-        if (imuManager) {
-            movementPayload = "{";
-            movementPayload += "\"avgAngleXZ\": " + String(imuManager->getAverageAngleXZ(), 2) + ",";
-            movementPayload += "\"avgAngleYZ\": " + String(imuManager->getAverageAngleYZ(), 2) + ",";
-            movementPayload += "\"totalMovement\": " + String(imuManager->getTotalMovement(), 2);
-            movementPayload += "}";
-        }
-        payload += "\"movement\": " + movementPayload + ",";
-        
-        payload += "\"beacons\": {";
-        payload += collectedBeaconsJson;
-        payload += "}";
-        payload += "}";
-
-        return payload;
-    }
-
-    void wifiDataSender() {
-        if (wifiManager.isConnected()) {
-            HTTPClient http;
-            http.begin(cfg.serverUrl);
-            http.addHeader("Content-Type", "application/json");
-
-            String finalJson = buildJsonPayload();
-            Serial.println("Sending JSON: ");
-            Serial.println(finalJson);
-
-            int httpResponseCode = http.POST(finalJson);
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
-            if (httpResponseCode != 200) {
-                Serial.print("Error: ");
-                Serial.println(http.errorToString(httpResponseCode).c_str());
-            }
-
-            http.end();
-        } else {
-            Serial.println("WiFi not connected");
-        }
-    }
-
 public:
-    BleManager(const WifiManager& wifi, Config& config, IMUManager* imu) : 
-        scanTimer(SCAN_TIME * 1000 + 1000), 
-        isScanning(false), 
-        pBLEScan(nullptr), 
-        wifiManager(wifi),
-        cfg(config),
-        imuManager(imu)
+    BleManager(WifiManager& wifi, Config& config, IMUManager* imu, LedManager* led, VibrationManager* vib)
+        : Process(),
+          wifiManager(wifi),
+          cfg(config),
+          imuManager(imu),
+          ledManager(led),
+          vibrationManager(vib),
+          scanTimer(SCAN_INTERVAL_MS),
+          pBLEScan(nullptr)
     {
-        g_bleManager = this;
+        g_bleManager = this; // Assign this instance to the global pointer
     }
 
     void setup() override {
         BLEDevice::init("");
         pBLEScan = BLEDevice::getScan();
-        pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
         pBLEScan->setActiveScan(true);
         pBLEScan->setInterval(BLE_SCAN_INTERVAL);
         pBLEScan->setWindow(BLE_SCAN_WINDOW);
+        scanTimer.reset();
         Serial.println("BLE Initialized");
     }
 
     void update() override {
-        if (wifiManager.isConnected() && scanTimer.hasElapsed() && !isScanning) {
-            if (startScan()) {
-                scanTimer.reset();
+        if (scanTimer.checkAndReset()) {
+            startScan();
+        }
+    }
+
+    // This method is called by the global scanCompleteCallback
+    void onScanComplete(BLEScanResults results) {
+        Serial.printf("Scan complete! Found %d devices.\n", results.getCount());
+        if (wifiManager.isConnected()) {
+            sendData(results);
+        } else {
+            Serial.println("WiFi not connected, skipping data send.");
+        }
+    }
+
+private:
+    void startScan() {
+        Serial.println("Starting BLE scan...");
+        
+        // Prepare the IMU for a new accumulation interval
+        if (imuManager) {
+            imuManager->prepareForNextInterval();
+        }
+
+        // Start the scan. The scanCompleteCallback will be executed when it's done.
+        pBLEScan->start(SCAN_DURATION, scanCompleteCallback);
+    }
+
+    void sendData(BLEScanResults& results) {
+        HTTPClient http;
+        http.begin(cfg.serverUrl.c_str());
+        http.addHeader("Content-Type", "application/json");
+
+        JsonDocument doc;
+        doc["scanner_id"] = wifiManager.getMacAddress();
+
+        JsonArray beacons = doc.createNestedArray("beacons");
+        for (int i = 0; i < results.getCount(); i++) {
+            BLEAdvertisedDevice device = results.getDevice(i);
+            if(device.haveName() && String(device.getName().c_str()).startsWith(BEACON_NAME_PREFIX)) {
+                JsonObject beacon = beacons.add<JsonObject>();
+                beacon["name"] = device.getName().c_str();
+                beacon["rssi"] = device.getRSSI();
             }
         }
+
+        if (imuManager) {
+            JsonObject movement = doc.createNestedObject("movement");
+            movement["avgAngleXZ"] = imuManager->getAverageAngleXZ();
+            movement["avgAngleYZ"] = imuManager->getAverageAngleYZ();
+            movement["totalMovement"] = imuManager->getTotalMovement();
+        }
+
+        String jsonBuffer;
+        serializeJson(doc, jsonBuffer);
+        Serial.println("Sending JSON: " + jsonBuffer);
+
+        int httpResponseCode = http.POST(jsonBuffer);
+
+        if (httpResponseCode == HTTP_CODE_OK) {
+            String payload = http.getString();
+            Serial.println("Received response: " + payload);
+            parseBehaviorResponse(payload);
+        } else {
+            Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
+        }
+
+        http.end();
+    }
+    
+    uint32_t hexToColor(String hex) {
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        }
+        // Add "0x" prefix for strtol to correctly parse it as a hex number
+        return (uint32_t)strtol(("0x" + hex).c_str(), NULL, 16);
     }
 
-    void onScanComplete(BLEScanResults& results) {
-        Serial.print("Scan complete. Devices found: ");
-        Serial.println(results.getCount());
-        isScanning = false;
-        wifiDataSender();
-    }
+    void parseBehaviorResponse(String& payload) {
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, payload);
 
-    void onDeviceFound(BLEAdvertisedDevice& advertisedDevice) {
-        if (advertisedDevice.haveName() && advertisedDevice.getName().startsWith(BEACON_NAME_PREFIX)) {
-            float rssi = advertisedDevice.getRSSI();
-            String beaconName = advertisedDevice.getName();
+        if (error) {
+            Serial.printf("deserializeJson() failed: %s\n", error.c_str());
+            return;
+        }
+
+        if (doc.containsKey("led_behavior")) {
+            JsonObject led_config = doc["led_behavior"];
+            const char* type = led_config["type"];
             
-            String beaconData = "\"" + beaconName + "\": {";
-            beaconData += "\"RSSI\": " + String(rssi, 0) + ",";
-            beaconData += "\"Beacon name\": \"" + beaconName + "\"";
-            beaconData += "},";
+            if (strcmp(type, "Off") == 0) ledManager->setBehavior(new LedsOffBehavior());
+            else if (strcmp(type, "Breathing") == 0) ledManager->setBehavior(new BreathingBehavior(hexToColor(led_config["params"]["color"].as<String>())));
+            else if (strcmp(type, "HeartBeat") == 0) ledManager->setBehavior(new HeartBeatBehavior(hexToColor(led_config["params"]["color"].as<String>()), led_config["params"]["period"].as<unsigned long>()));
+            else if (strcmp(type, "Cycle") == 0) ledManager->setBehavior(new CycleBehavior(hexToColor(led_config["params"]["color"].as<String>()), led_config["params"]["delay"].as<int>()));
+        }
 
-            collectedBeaconsJson += beaconData;
+        if (doc.containsKey("vibration_behavior")) {
+            JsonObject vib_config = doc["vibration_behavior"];
+            const char* type = vib_config["type"];
+
+            if (strcmp(type, "Off") == 0) vibrationManager->setBehavior(new MotorOffBehavior());
+            else if (strcmp(type, "Constant") == 0) vibrationManager->setBehavior(new ConstantVibrationBehavior(vib_config["params"]["intensity"].as<uint8_t>()));
+            else if (strcmp(type, "Burst") == 0) vibrationManager->setBehavior(new BurstVibrationBehavior(vib_config["params"]["intensity"].as<uint8_t>(), vib_config["params"]["frequency"].as<unsigned long>()));
         }
     }
+
+    // Member variables
+    WifiManager& wifiManager;
+    Config& cfg;
+    IMUManager* imuManager;
+    LedManager* ledManager;
+    VibrationManager* vibrationManager;
+    Timer scanTimer;
+    BLEScan* pBLEScan;
 };
 
-inline void MyAdvertisedDeviceCallbacks::onResult(BLEAdvertisedDevice advertisedDevice) {
-    if (g_bleManager) {
-        g_bleManager->onDeviceFound(advertisedDevice);
-    }
-}
-
+// Define the callback function to pass to the BLE scanner
 inline void scanCompleteCallback(BLEScanResults results) {
     if (g_bleManager) {
         g_bleManager->onScanComplete(results);

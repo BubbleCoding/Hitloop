@@ -12,7 +12,8 @@
 #define WIFI_SEND_DELAY 3000
 #define SERIAL_BAUD_RATE 115200
 #define SETUP_DELAY 1000
-#define SCAN_TIME 10
+#define SCAN_DURATION 5 // Scan for 5 seconds
+#define SCAN_INTERVAL_MS (SCAN_DURATION * 1000 + 2000) // Interval between scans
 
 #define BOOT_BUTTON_PIN 9
 
