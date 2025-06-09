@@ -1,14 +1,18 @@
-FROM python:3.12-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN apt-get update && apt-get install -y git
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements first to leverage Docker cache
+COPY Webserver/requirements.txt Webserver/requirements.txt
+RUN pip install -r Webserver/requirements.txt
 
-COPY . .
+# Copy the rest of the application
+COPY Webserver/ /app/Webserver/
 
-EXPOSE 8000
+# Set the working directory to the webserver root
+WORKDIR /app/Webserver
 
-CMD ["mkdocs", "serve", "-a", "0.0.0.0:8000"] 
+EXPOSE 5000
+
+# Run the application using the new entry point
+CMD ["flask", "--app", "run", "run", "--host=0.0.0.0"] 

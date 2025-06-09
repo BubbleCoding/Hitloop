@@ -11,9 +11,10 @@
     <div id="page-title-container">
         <h1>Hitloop</h1>
         <nav>
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('simulation_page') }}">Simulation</a>
-            <a href="{{ url_for('configure_device_page') }}">Configure Device</a>
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <a href="{{ url_for('main.simulation_page') }}">Simulation</a>
+            <a href="{{ url_for('main.configure_device_page') }}">Configure</a>
+            <button id="reset-button">Reset All Devices</button>
         </nav>
     </div>
     <h1>ESP32 Beacon Tracker</h1>
@@ -25,5 +26,16 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/index-updater.js') }}"></script>
+    <script>
+        document.getElementById('reset-button').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all device data?')) {
+                fetch("{{ url_for('main.reset_devices_data') }}")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Handle response from server
+                    });
+            }
+        });
+    </script>
 </body>
 </html> 
