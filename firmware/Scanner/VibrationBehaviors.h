@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "Timer.h"
 #include "config.h"
+#include <ArduinoJson.h>
 
 // --- Vibration Behavior Base Class ---
 class VibrationBehavior {
@@ -14,6 +15,7 @@ public:
         pinMode(VIBRATION_MOTOR_PIN, OUTPUT);
     }
     virtual void update() = 0;
+    virtual void updateParams(JsonObject& params) {}
 
 protected:
     VibrationBehavior(const char* type) : type(type) {}
@@ -40,6 +42,10 @@ public:
     uint8_t intensity;
     ConstantVibrationBehavior(uint8_t intensity) : VibrationBehavior("Constant"), intensity(intensity) {}
     
+    void updateParams(JsonObject& params) override {
+        intensity = params["intensity"].as<uint8_t>();
+    }
+
     void setup() override {
         VibrationBehavior::setup();
         analogWrite(VIBRATION_MOTOR_PIN, intensity);
@@ -57,6 +63,11 @@ public:
     unsigned long frequency;
     BurstVibrationBehavior(uint8_t intensity, unsigned long frequency) 
         : VibrationBehavior("Burst"), intensity(intensity), frequency(frequency), burstTimer(1000 / frequency), motorOn(false) {}
+
+    void updateParams(JsonObject& params) override {
+        intensity = params["intensity"].as<uint8_t>();
+        frequency = params["frequency"].as<unsigned long>();
+    }
 
     void setup() override {
         VibrationBehavior::setup();

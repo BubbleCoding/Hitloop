@@ -3,6 +3,8 @@
 
 #include <Adafruit_NeoPixel.h>
 #include "Timer.h"
+#include <ArduinoJson.h>
+#include "Utils.h"
 
 // --- LED Behavior Base Class ---
 class LedBehavior {
@@ -13,6 +15,7 @@ public:
         this->pixels = &pixels;
     }
     virtual void update() = 0;
+    virtual void updateParams(JsonObject& params) {}
 
 protected:
     LedBehavior(const char* type) : type(type) {}
@@ -47,6 +50,10 @@ public:
     uint32_t color;
     BreathingBehavior(uint32_t color) : LedBehavior("Breathing"), color(color), updateTimer(1000 / 50) {} // 50Hz for smooth animation
 
+    void updateParams(JsonObject& params) override {
+        color = hexToColor(params["color"].as<String>());
+    }
+
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
         updateTimer.reset();
@@ -72,6 +79,11 @@ public:
     unsigned long period;
     HeartBeatBehavior(uint32_t color, unsigned long period) 
         : LedBehavior("HeartBeat"), color(color), period(period), periodTimer(period), beatTimer(50), state(IDLE) {}
+
+    void updateParams(JsonObject& params) override {
+        color = hexToColor(params["color"].as<String>());
+        period = params["period"].as<unsigned long>();
+    }
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
@@ -169,6 +181,11 @@ public:
     uint32_t color;
     int delay;
     CycleBehavior(uint32_t color, int delay) : LedBehavior("Cycle"), color(color), delay(delay), updateTimer(delay) {}
+
+    void updateParams(JsonObject& params) override {
+        color = hexToColor(params["color"].as<String>());
+        delay = params["delay"].as<int>();
+    }
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
