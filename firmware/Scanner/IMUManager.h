@@ -9,6 +9,7 @@
 
 // Conversion factor from cm/s^2 to g. 1g = 980.665 cm/s^2
 #define CMS2_TO_G 0.0010197
+#define MOVING_AVG_WINDOW_SIZE 10
 
 class IMUManager : public Process {
 private:
@@ -16,15 +17,21 @@ private:
     SPARKFUN_LIS2DH12 sensor;       //Create instance
     bool sensorOk = false;
 
-    // Accumulators for the interval
+    // --- Moving Average Filter State ---
+    float angleXZHistory[MOVING_AVG_WINDOW_SIZE] = {0.0f};
+    float angleYZHistory[MOVING_AVG_WINDOW_SIZE] = {0.0f};
     float sumAngleXZ = 0.0;
     float sumAngleYZ = 0.0;
-    float totalMovement = 0.0;
-    int readingCount = 0;
+    int historyIndex = 0;
+    int readingsInHistory = 0;
 
-    // Final calculated values for the interval
-    float averageAngleXZ = 0.0;
-    float averageAngleYZ = 0.0;
+    // --- Interval Accumulator State ---
+    float totalMovementInInterval = 0.0;
+    float lastIntervalTotalMovement = 0.0;
+
+    // --- Current Calculated Values ---
+    float movingAverageAngleXZ = 0.0;
+    float movingAverageAngleYZ = 0.0;
     
 public:
     IMUManager() : 
@@ -47,48 +54,52 @@ public:
 
     void update() override {
         if (sensorOk && readTimer.checkAndReset() && sensor.available()) {
-            float x_mm = sensor.getX();
-            float y_mm = sensor.getY();
-            float z_mm = sensor.getZ();
+            // --- 1. Read and Convert Data ---
+            float x_g = sensor.getX() * CMS2_TO_G;
+            float y_g = sensor.getY() * CMS2_TO_G;
+            float z_g = sensor.getZ() * CMS2_TO_G;
 
-            // Convert to g-force
-            float x_g = x_mm * CMS2_TO_G;
-            float y_g = y_mm * CMS2_TO_G;
-            float z_g = z_mm * CMS2_TO_G;
+            // --- 2. Update Moving Average Filters for Angles ---
+            float currentAngleXZ = atan2(x_g, z_g)  / PI * 180;
+            float currentAngleYZ = atan2(y_g, z_g)  / PI * 180;
 
-            // Accumulate angle data
-            sumAngleXZ += atan2(x_g, z_g) * 180.0 / PI;
-            sumAngleYZ += atan2(y_g, z_g) * 180.0 / PI;
+            // Subtract the oldest value from the sum and add the new one
+            sumAngleXZ = sumAngleXZ - angleXZHistory[historyIndex] + currentAngleXZ;
+            sumAngleYZ = sumAngleYZ - angleYZHistory[historyIndex] + currentAngleYZ;
 
-            // Accumulate total movement
-            totalMovement += sqrt(x_g*x_g + y_g*y_g + z_g*z_g);
+            // Store the new value in the history buffer
+            angleXZHistory[historyIndex] = currentAngleXZ;
+            angleYZHistory[historyIndex] = currentAngleYZ;
             
-            readingCount++;
-            // Serial.print(x_g); Serial.print("\t");
-            // Serial.print(y_g); Serial.print("\t");
-            // Serial.print(z_g); Serial.print("\n");
+            // Increment the index for the next reading
+            historyIndex = (historyIndex + 1) % MOVING_AVG_WINDOW_SIZE;
+
+            // Keep track of how many readings we have for the initial average calculation
+            if (readingsInHistory < MOVING_AVG_WINDOW_SIZE) {
+                readingsInHistory++;
+            }
+            
+            // Calculate the new moving average
+            movingAverageAngleXZ = sumAngleXZ / readingsInHistory;
+            movingAverageAngleYZ = sumAngleYZ / readingsInHistory;
+
+            // --- 3. Accumulate total movement for the current interval ---
+            totalMovementInInterval += sqrt(x_g*x_g + y_g*y_g + z_g*z_g);
         }
     }
 
+    // Called by BleManager before a new scan interval begins
     void prepareForNextInterval() {
-        if (readingCount > 0) {
-            averageAngleXZ = sumAngleXZ / readingCount;
-            averageAngleYZ = sumAngleYZ / readingCount;
-        } else {
-            averageAngleXZ = 0;
-            averageAngleYZ = 0;
-        }
+        // Latch the total movement from the completed interval
+        lastIntervalTotalMovement = totalMovementInInterval;
         
-        // Reset accumulators for the next interval
-        sumAngleXZ = 0.0;
-        sumAngleYZ = 0.0;
-        totalMovement = 0.0; // Total movement is also reset after being read
-        readingCount = 0;
+        // Reset the accumulator for the next interval
+        totalMovementInInterval = 0.0;
     }
 
-    float getAverageAngleXZ() const { return averageAngleXZ; }
-    float getAverageAngleYZ() const { return averageAngleYZ; }
-    float getTotalMovement() const { return totalMovement; }
+    float getAverageAngleXZ() const { return movingAverageAngleXZ; }
+    float getAverageAngleYZ() const { return movingAverageAngleYZ; }
+    float getTotalMovement() const { return lastIntervalTotalMovement; }
 };
 
 #endif // IMU_MANAGER_H 
