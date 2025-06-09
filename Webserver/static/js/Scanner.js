@@ -128,6 +128,7 @@ class Scanner {
     detectAndSendData() {
         let payload = {
             "Scanner name": this.id,
+            "scanner_id": this.id,
             "movement": parseFloat(this.movementSinceLastSend.toFixed(2)),
             "beacons": {},
             "simulated": true
