@@ -7,6 +7,7 @@
 // --- LED Behavior Base Class ---
 class LedBehavior {
 public:
+    const char* type;
     virtual ~LedBehavior() {}
     virtual void setup(Adafruit_NeoPixel& pixels) {
         this->pixels = &pixels;
@@ -14,6 +15,7 @@ public:
     virtual void update() = 0;
 
 protected:
+    LedBehavior(const char* type) : type(type) {}
     Adafruit_NeoPixel* pixels;
     uint32_t scaleColor(uint32_t color, uint8_t brightness) {
         uint8_t r = (uint8_t)((color >> 16) * brightness / 255);
@@ -28,6 +30,7 @@ protected:
 // 1. LedsOffBehavior
 class LedsOffBehavior : public LedBehavior {
 public:
+    LedsOffBehavior() : LedBehavior("Off") {}
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
         this->pixels->clear();
@@ -41,7 +44,8 @@ public:
 // 2. BreathingBehavior
 class BreathingBehavior : public LedBehavior {
 public:
-    BreathingBehavior(uint32_t color) : baseColor(color), updateTimer(1000 / 50) {} // 50Hz for smooth animation
+    uint32_t color;
+    BreathingBehavior(uint32_t color) : LedBehavior("Breathing"), color(color), updateTimer(1000 / 50) {} // 50Hz for smooth animation
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
@@ -52,21 +56,22 @@ public:
         if (updateTimer.checkAndReset()) {
             float sine_wave = sin(millis() * 2.0 * PI / 4000.0); // 4-second period
             uint8_t brightness = (uint8_t)(((sine_wave + 1.0) / 2.0) * 255.0);
-            pixels->fill(scaleColor(baseColor, brightness));
+            pixels->fill(scaleColor(color, brightness));
             pixels->show();
         }
     }
 
 private:
-    uint32_t baseColor;
     Timer updateTimer;
 };
 
 // 3. HeartBeatBehavior
 class HeartBeatBehavior : public LedBehavior {
 public:
+    uint32_t color;
+    unsigned long period;
     HeartBeatBehavior(uint32_t color, unsigned long period) 
-        : baseColor(color), periodTimer(period), beatTimer(50), state(IDLE) {}
+        : LedBehavior("HeartBeat"), color(color), period(period), periodTimer(period), beatTimer(50), state(IDLE) {}
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
@@ -85,14 +90,14 @@ public:
             case FADE_IN_1: {
                 unsigned long elapsed = millis() - beatTimer.last_update;
                 if (elapsed >= beatTimer.interval) {
-                    pixels->fill(baseColor);
+                    pixels->fill(color);
                     pixels->show();
                     state = FADE_OUT_1;
                     beatTimer.interval = 150;
                     beatTimer.reset();
                 } else {
                     uint8_t brightness = (elapsed * 255) / beatTimer.interval;
-                    pixels->fill(scaleColor(baseColor, brightness));
+                    pixels->fill(scaleColor(color, brightness));
                     pixels->show();
                 }
                 break;
@@ -107,7 +112,7 @@ public:
                     beatTimer.reset();
                 } else {
                     uint8_t brightness = 255 - (elapsed * 255 / beatTimer.interval);
-                    pixels->fill(scaleColor(baseColor, brightness));
+                    pixels->fill(scaleColor(color, brightness));
                     pixels->show();
                 }
                 break;
@@ -122,14 +127,14 @@ public:
             case FADE_IN_2: {
                  unsigned long elapsed = millis() - beatTimer.last_update;
                 if (elapsed >= beatTimer.interval) {
-                    pixels->fill(baseColor);
+                    pixels->fill(color);
                     pixels->show();
                     state = FADE_OUT_2;
                     beatTimer.interval = 400; // Slower fade out
                     beatTimer.reset();
                 } else {
                     uint8_t brightness = (elapsed * 255) / beatTimer.interval;
-                    pixels->fill(scaleColor(baseColor, brightness));
+                    pixels->fill(scaleColor(color, brightness));
                     pixels->show();
                 }
                 break;
@@ -142,7 +147,7 @@ public:
                     state = IDLE;
                 } else {
                     uint8_t brightness = 255 - (elapsed * 255 / beatTimer.interval);
-                    pixels->fill(scaleColor(baseColor, brightness));
+                    pixels->fill(scaleColor(color, brightness));
                     pixels->show();
                 }
                 break;
@@ -153,7 +158,6 @@ public:
 private:
     enum BeatState { IDLE, FADE_IN_1, FADE_OUT_1, PAUSE, FADE_IN_2, FADE_OUT_2 };
     BeatState state;
-    uint32_t baseColor;
     Timer periodTimer; // Time between heartbeats
     Timer beatTimer;   // Time for individual fades/pauses
 };
@@ -162,7 +166,9 @@ private:
 // 4. CycleBehavior
 class CycleBehavior : public LedBehavior {
 public:
-    CycleBehavior(uint32_t color, int delay) : color(color), updateTimer(delay) {}
+    uint32_t color;
+    int delay;
+    CycleBehavior(uint32_t color, int delay) : LedBehavior("Cycle"), color(color), delay(delay), updateTimer(delay) {}
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
@@ -180,7 +186,6 @@ public:
     }
 
 private:
-    uint32_t color;
     Timer updateTimer;
     int currentPixel;
 };

@@ -8,11 +8,15 @@
 // --- Vibration Behavior Base Class ---
 class VibrationBehavior {
 public:
+    const char* type;
     virtual ~VibrationBehavior() {}
     virtual void setup() {
         pinMode(VIBRATION_MOTOR_PIN, OUTPUT);
     }
     virtual void update() = 0;
+
+protected:
+    VibrationBehavior(const char* type) : type(type) {}
 };
 
 // --- Concrete Vibration Behaviors ---
@@ -20,6 +24,7 @@ public:
 // 1. MotorOffBehavior
 class MotorOffBehavior : public VibrationBehavior {
 public:
+    MotorOffBehavior() : VibrationBehavior("Off") {}
     void setup() override {
         VibrationBehavior::setup();
         analogWrite(VIBRATION_MOTOR_PIN, 0);
@@ -32,7 +37,8 @@ public:
 // 2. ConstantVibrationBehavior
 class ConstantVibrationBehavior : public VibrationBehavior {
 public:
-    ConstantVibrationBehavior(uint8_t intensity) : intensity(intensity) {}
+    uint8_t intensity;
+    ConstantVibrationBehavior(uint8_t intensity) : VibrationBehavior("Constant"), intensity(intensity) {}
     
     void setup() override {
         VibrationBehavior::setup();
@@ -42,15 +48,15 @@ public:
     void update() override {
         // Do nothing, motor is at constant vibration
     }
-private:
-    uint8_t intensity;
 };
 
 // 3. BurstVibrationBehavior
 class BurstVibrationBehavior : public VibrationBehavior {
 public:
+    uint8_t intensity;
+    unsigned long frequency;
     BurstVibrationBehavior(uint8_t intensity, unsigned long frequency) 
-        : intensity(intensity), burstTimer(1000 / frequency), motorOn(false) {}
+        : VibrationBehavior("Burst"), intensity(intensity), frequency(frequency), burstTimer(1000 / frequency), motorOn(false) {}
 
     void setup() override {
         VibrationBehavior::setup();
@@ -65,7 +71,6 @@ public:
         }
     }
 private:
-    uint8_t intensity;
     Timer burstTimer;
     bool motorOn;
 };
