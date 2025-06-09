@@ -39,7 +39,7 @@ public:
     void setup() override {
         BLEDevice::init("");
         pBLEScan = BLEDevice::getScan();
-        pBLEScan->setActiveScan(true);
+        pBLEScan->setActiveScan(false);
         pBLEScan->setInterval(BLE_SCAN_INTERVAL);
         pBLEScan->setWindow(BLE_SCAN_WINDOW);
         scanTimer.reset();
@@ -84,11 +84,17 @@ private:
         doc["scanner_id"] = wifiManager.getMacAddress();
 
         JsonArray beacons = doc.createNestedArray("beacons");
+        BLEUUID serviceUUID(BEACON_SERVICE_UUID);
+
         for (int i = 0; i < results.getCount(); i++) {
             BLEAdvertisedDevice device = results.getDevice(i);
-            if(device.haveName() && String(device.getName().c_str()).startsWith(BEACON_NAME_PREFIX)) {
+            if (device.isAdvertisingService(serviceUUID)) {
                 JsonObject beacon = beacons.add<JsonObject>();
-                beacon["name"] = device.getName().c_str();
+                if (device.haveName()) {
+                    beacon["name"] = device.getName().c_str();
+                } else {
+                    beacon["name"] = device.getAddress().toString().c_str();
+                }
                 beacon["rssi"] = device.getRSSI();
             }
         }
@@ -108,7 +114,7 @@ private:
 
         if (httpResponseCode == HTTP_CODE_OK) {
             String payload = http.getString();
-            Serial.println("Received response: " + payload);
+            //Serial.println("Received response: " + payload);
             parseBehaviorResponse(payload);
         } else {
             Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
@@ -166,9 +172,9 @@ private:
                 else if (strcmp(type, "HeartBeat") == 0) ledManager->setBehavior(new HeartBeatBehavior(hexToColor(led_config["params"]["color"].as<String>()), led_config["params"]["period"].as<unsigned long>()));
                 else if (strcmp(type, "Cycle") == 0) ledManager->setBehavior(new CycleBehavior(hexToColor(led_config["params"]["color"].as<String>()), led_config["params"]["delay"].as<int>()));
             }
-        }
+       }
 
-        // --- Parse and Set Vibration Behavior ---
+        --- Parse and Set Vibration Behavior ---
         if (doc.containsKey("vibration_behavior")) {
             JsonObject vib_config = doc["vibration_behavior"];
             const char* type = vib_config["type"];

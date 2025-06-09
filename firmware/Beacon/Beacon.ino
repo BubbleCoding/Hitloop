@@ -1,11 +1,11 @@
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
-#include <BLEBeacon.h>
 #include "esp_mac.h"
 
 #define DEVICE_NAME_PREFIX "HitloopBeacon"
-#define BEACON_UUID_REV "A134D0B2-1DA2-1BA7-C94C-E8E00C9F7A2D"
+// This UUID must match the one in the Scanner's config.h
+#define BEACON_SERVICE_UUID "19b10000-e8f2-537e-4f6c-d104768a1214"
 
 BLEServer* pServer;
 bool deviceConnected = false;
@@ -19,9 +19,9 @@ class MyServerCallbacks : public BLEServerCallbacks {
   void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
     Serial.println("deviceConnected = false");
-    BLEAdvertising* pAdvertising = pServer->getAdvertising();
-    pAdvertising->start();
-    Serial.println("iBeacon advertising restarted");
+    // Restart advertising after disconnection
+    pServer->getAdvertising()->start();
+    Serial.println("Advertising restarted");
   }
 };
 
@@ -35,50 +35,37 @@ String getUniqueDeviceName() {
   return String(DEVICE_NAME_PREFIX) + "-" + macSuffix;
 }
 
-void init_beacon() {
-  BLEAdvertising* pAdvertising = pServer->getAdvertising();
-  pAdvertising->stop();
-
-  pAdvertising->setMinInterval(160);  // 100ms
-  pAdvertising->setMaxInterval(240);  // 150ms
-
-  BLEBeacon myBeacon;
-  myBeacon.setManufacturerId(0x4c00);
-  myBeacon.setMajor(5);
-  myBeacon.setMinor(88);
-  myBeacon.setSignalPower(0xc5);
-  myBeacon.setProximityUUID(BLEUUID(BEACON_UUID_REV));
-
-  BLEAdvertisementData advertisementData;
-  advertisementData.setFlags(0x1A);  // General discoverable mode
-  advertisementData.setManufacturerData(myBeacon.getData());
-
-  pAdvertising->setAdvertisementData(advertisementData);
-  pAdvertising->start();
-}
-
 void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println("Initializing...");
-  Serial.flush();
 
   String deviceName = getUniqueDeviceName();
   Serial.print("Device name set to: ");
   Serial.println(deviceName);
 
+  // --- Initialize BLE Device ---
   BLEDevice::init(deviceName.c_str());
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);  // Max TX power
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);
 
+  // --- Create Server and Service ---
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
+  BLEService *pService = pServer->createService(BEACON_SERVICE_UUID);
+  pService->start(); // Start the service
 
-  init_beacon();
+  // --- Configure and Start Advertising ---
+  BLEAdvertising *pAdvertising = pServer->getAdvertising();
+  pAdvertising->addServiceUUID(BEACON_SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06); // functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x12);
+  pAdvertising->start();
 
-  Serial.println("iBeacon is advertising!");
+  Serial.println("Beacon is advertising with service UUID!");
 }
 
 void loop() {
-  // iBeacon only — no BLE service or characteristic
-  delay(1000);
+  // Nothing to do here for a simple beacon
+  delay(2000);
 }
