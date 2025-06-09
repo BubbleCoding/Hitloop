@@ -35,8 +35,10 @@ public:
         }
     }
 
-private:
     VibrationBehavior* currentBehavior;
+
+private:
+    // No private members
 };
 
 #endif // VIBRATION_MANAGER_H 

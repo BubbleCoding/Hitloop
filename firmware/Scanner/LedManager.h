@@ -37,6 +37,7 @@ public:
         }
     }
 
+    // Public members for access by BleManager
     Adafruit_NeoPixel pixels;
     LedBehavior* currentBehavior;
 };

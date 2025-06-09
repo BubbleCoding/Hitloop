@@ -14,45 +14,58 @@ Commands van de server uitvoeren.                         |
 // Process classes
 #include "SystemManager.h"
 #include "WifiManager.h"
-#include "BleManager.h"
 #include "IMUManager.h"
 #include "LedManager.h"
 #include "VibrationManager.h"
+#include "BehaviorManager.h"
+#include "HTTPManager.h"
+#include "DataManager.h"
+#include "BleManager.h"
 
 Config cfg;
 
-// Define the global pointer required for callbacks
+// Global pointer for BLE callback
 BleManager* g_bleManager = nullptr;
 
 // Process managers
 std::vector<Process*> processes;
 WifiManager* wifiManager;
-BleManager* bleManager;
 IMUManager* imuManager;
 LedManager* ledManager;
 VibrationManager* vibrationManager;
+BehaviorManager* behaviorManager;
+HTTPManager* httpManager;
+DataManager* dataManager;
+BleManager* bleManager;
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
   cfg.loadConfig();
 
-  // Create and add all processes to the manager
+  // --- Instantiate all process managers ---
+  // Core hardware and system
   processes.push_back(new SystemManager(cfg));
-
   wifiManager = new WifiManager(cfg);
   processes.push_back(wifiManager);
-
   imuManager = new IMUManager();
   processes.push_back(imuManager);
 
+  // Peripheral managers
   ledManager = new LedManager();
   processes.push_back(ledManager);
-
   vibrationManager = new VibrationManager();
   processes.push_back(vibrationManager);
 
-  // The BleManager depends on the WifiManager, Config, IMUManager, LedManager, and VibrationManager
-  bleManager = new BleManager(*wifiManager, cfg, imuManager, ledManager, vibrationManager);
+  // Logic and communication managers
+  behaviorManager = new BehaviorManager(ledManager, vibrationManager);
+  processes.push_back(behaviorManager);
+  httpManager = new HTTPManager(cfg, behaviorManager);
+  processes.push_back(httpManager);
+  dataManager = new DataManager(imuManager, wifiManager, httpManager);
+  processes.push_back(dataManager);
+  
+  // The BleManager now only depends on Wifi and Data managers
+  bleManager = new BleManager(*wifiManager, dataManager);
   processes.push_back(bleManager);
   
   // Initialize all processes
