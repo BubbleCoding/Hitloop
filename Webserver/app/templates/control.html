@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        #canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="page-title-container">
+        <h1>Scanner Control</h1>
+        <nav>
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <a href="{{ url_for('main.simulation_page') }}">Simulation</a>
+            <a href="{{ url_for('main.configure_device_page') }}">Configure</a>
+            <a href="{{ url_for('main.control_page') }}">Control</a>
+        </nav>
+    </div>
+    <div id="canvas-container">
+        <!-- p5.js canvas will be attached here -->
+    </div>
+    <script src="{{ url_for('static', filename='js/control.js') }}"></script>
+</body>
+</html> 
