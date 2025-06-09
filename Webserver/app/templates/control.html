@@ -8,11 +8,51 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        #canvas-container {
+        #main-content-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: space-around;
+            align-items: flex-start;
             margin-top: 20px;
+        }
+
+        #canvas-container {
+            order: 2;
+        }
+
+        .side-panel {
+            width: 25%;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            border-radius: 5px;
+        }
+
+        #led-control-panel { order: 1; }
+        #vibration-control-panel { order: 3; }
+
+        .behavior-category {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
+        .behavior-form {
+            background-color: #444;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .behavior-form h5 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .behavior-form label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .behavior-form input[type="range"] {
+            width: 70%;
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -26,12 +66,18 @@
             <a href="{{ url_for('main.control_page') }}">Control</a>
         </nav>
     </div>
-    <div id="canvas-container">
-        <!-- p5.js canvas will be attached here -->
+    <div id="main-content-container">
+        <div id="led-control-panel" class="side-panel">
+            <!-- LED controls will be dynamically added here -->
+        </div>
+        <div id="canvas-container">
+            <!-- p5.js canvas will be attached here -->
+        </div>
+        <div id="vibration-control-panel" class="side-panel">
+            <!-- Vibration controls will be dynamically added here -->
+        </div>
     </div>
-    <div id="control-panel">
-        <!-- Behavior controls will be dynamically added here -->
-    </div>
+    
     <script src="{{ url_for('static', filename='js/control.js') }}"></script>
 </body>
 </html> 
