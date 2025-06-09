@@ -155,7 +155,11 @@ def receive_data():
         
         # Ensure next_slot_time_ms is always in the future
         if next_slot_time_ms < current_time_ms:
-            next_slot_time_ms = current_time_ms
+            # This aligns all scanners to a grid based on the scan interval.
+            # It calculates how many intervals have passed since the epoch (time=0),
+            # finds the next full interval, and sets that as the new slot time.
+            slots_passed = current_time_ms // (SCAN_INTERVAL_SECONDS * 1000)
+            next_slot_time_ms = (slots_passed + 1) * (SCAN_INTERVAL_SECONDS * 1000)
 
         wait_ms = next_slot_time_ms - current_time_ms
 
@@ -167,11 +171,11 @@ def receive_data():
         "led_behavior": {
             "type": "Breathing",
             "params": {
-                "color": "#0000FF"  # Blue
+                "color": "#00FF00"  # Blue
             }
         },
         "vibration_behavior": {
-            "type": "Burst",
+            "type": "Off",
             "params": {
                 "intensity": 200,
                 "frequency": 2
