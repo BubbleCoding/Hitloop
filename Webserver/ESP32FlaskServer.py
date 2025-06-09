@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+import time
+from threading import Lock
 
 app = Flask(__name__)
 
@@ -65,10 +67,20 @@ def RSSI_to_distance(RSSI):
 def index():
     return render_template('index.html', devices=devices_data)
 
+# --- Synchronization Settings ---
+SCAN_INTERVAL_SECONDS = 5
+# Use a thread-safe way to store the next slot time
+# In a more complex app (e.g., using gunicorn with workers), 
+# an external store like Redis or a database would be needed.
+next_slot_time_ms = int(time.time() * 1000)
+# This lock might be useful if you scale the server, but for Flask's default
+# single-thread server, it's not strictly necessary. We'll include it for robustness.
+time_lock = Lock()
+
 @app.route('/data', methods=['POST'])
 def receive_data():
+    global next_slot_time_ms
     data = request.json
-    # Align the key with what the firmware is sending
     scanner_id = data.get("scanner_id")
     beacons_payload = data.get("beacons")
     movement_payload = data.get("movement")
@@ -137,16 +149,29 @@ def receive_data():
                     "distance": RSSI_to_distance(rssi)
                 }
 
-    # --- Step 3: Send back control commands ---
+    # --- Step 3: Calculate Synchronization and Send Control Commands ---
+    with time_lock:
+        current_time_ms = int(time.time() * 1000)
+        
+        # Ensure next_slot_time_ms is always in the future
+        if next_slot_time_ms < current_time_ms:
+            next_slot_time_ms = current_time_ms
+
+        wait_ms = next_slot_time_ms - current_time_ms
+
+        # Schedule the next device's slot
+        next_slot_time_ms += SCAN_INTERVAL_SECONDS * 1000
+
     control_payload = {
+        "wait_ms": wait_ms,
         "led_behavior": {
-            "type": "HeartBeat",
+            "type": "Breathing",
             "params": {
                 "color": "#0000FF"  # Blue
             }
         },
         "vibration_behavior": {
-            "type": "Off",
+            "type": "Burst",
             "params": {
                 "intensity": 200,
                 "frequency": 2
