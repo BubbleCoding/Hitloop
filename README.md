@@ -28,27 +28,41 @@ This project uses Docker and Docker Compose to manage the web application and do
   This command builds and starts all services. Ports are mapped to localhost as detailed in the 'Services' section (e.g., `docs` at `http://localhost:8000`, `webserver` at `http://localhost:5000`).
 
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
 
 * **Build and run only the documentation service:**
   This command starts the `docs` service, accessible at `http://localhost:8000`.
 
     ```bash
-    docker-compose up --build docs
+    docker compose up --build docs
     ```
 
 * **Build and run only the webserver service:**
   This command starts the `webserver` service, accessible at `http://localhost:5000`.
 
     ```bash
-    docker-compose up --build webserver
+    docker compose up --build webserver
     ```
 
 * **Stop and remove containers:**
 
     ```bash
-    docker-compose down
+    docker compose down
     ```
 
     (Or press `Ctrl+C` in the terminal where `docker-compose up` is running)
+
+## Run the project without docker
+
+### Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run the project
+
+```bash
+flask --app Webserver/run.py run --host=0.0.0.0
+```
