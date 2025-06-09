@@ -140,13 +140,13 @@ def receive_data():
     # --- Step 3: Send back control commands ---
     control_payload = {
         "led_behavior": {
-            "type": "Breathing",
+            "type": "HeartBeat",
             "params": {
                 "color": "#0000FF"  # Blue
             }
         },
         "vibration_behavior": {
-            "type": "Burst",
+            "type": "Off",
             "params": {
                 "intensity": 200,
                 "frequency": 2
