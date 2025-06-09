@@ -6,16 +6,36 @@
 #include "Process.h"
 #include "IMUManager.h"
 #include "WifiManager.h"
-#include "HTTPManager.h"
+#include "EventManager.h"
 #include "config.h"
 
 class DataManager : public Process {
 public:
-    DataManager(IMUManager* imu, WifiManager* wifi, HTTPManager* http) 
-        : imuManager(imu), wifiManager(wifi), httpManager(http) {}
+    DataManager(IMUManager* imu, WifiManager* wifi) 
+        : imuManager(imu), wifiManager(wifi) {}
     
-    // Called by BleManager when a scan is complete
+    void setup(EventManager* em) override {
+        Process::setup(em);
+        eventManager->subscribe(EVT_SCAN_COMPLETE, this);
+    }
+    
+    void onEvent(Event& event) override {
+        if (event.type == EVT_SCAN_COMPLETE) {
+            ScanCompleteEvent& e = static_cast<ScanCompleteEvent&>(event);
+            processScanResults(e.results);
+        }
+    }
+    
+    void update() override {
+        // This manager is reactive, does nothing in update
+    }
+
+private:
     void processScanResults(BLEScanResults& results) {
+        if (imuManager) {
+            imuManager->prepareForNextInterval();
+        }
+
         JsonDocument doc;
         doc["scanner_id"] = wifiManager->getMacAddress();
 
@@ -45,19 +65,12 @@ public:
         String jsonBuffer;
         serializeJson(doc, jsonBuffer);
         
-        if (httpManager) {
-            httpManager->sendData(jsonBuffer);
-        }
-    }
-    
-    void update() override {
-        // This manager is reactive, does nothing in update
+        DataReadyForHttpEvent httpEvent(jsonBuffer);
+        eventManager->publish(httpEvent);
     }
 
-private:
     IMUManager* imuManager;
     WifiManager* wifiManager;
-    HTTPManager* httpManager;
 };
 
 #endif // DATA_MANAGER_H 

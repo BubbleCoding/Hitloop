@@ -5,13 +5,30 @@
 #include "Process.h"
 #include "LedManager.h"
 #include "VibrationManager.h"
+#include "EventManager.h"
 
 class BehaviorManager : public Process {
 public:
     BehaviorManager(LedManager* led, VibrationManager* vib) 
         : ledManager(led), vibrationManager(vib) {}
 
-    // This method is called by HTTPManager when a response is received
+    void setup(EventManager* em) override {
+        Process::setup(em);
+        eventManager->subscribe(EVT_HTTP_RESPONSE, this);
+    }
+
+    void onEvent(Event& event) override {
+        if (event.type == EVT_HTTP_RESPONSE) {
+            HttpResponseEvent& e = static_cast<HttpResponseEvent&>(event);
+            handleServerResponse(e.responsePayload);
+        }
+    }
+
+    void update() override {
+        // This manager is reactive, so it does nothing in its update loop.
+    }
+
+private:
     void handleServerResponse(String& payload) {
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, payload);
@@ -82,11 +99,6 @@ public:
         }
     }
 
-    void update() override {
-        // This manager is reactive, so it does nothing in its update loop.
-    }
-
-private:
     LedManager* ledManager;
     VibrationManager* vibrationManager;
 

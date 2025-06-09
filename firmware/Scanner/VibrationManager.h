@@ -25,7 +25,8 @@ public:
         }
     }
 
-    void setup() override {
+    void setup(EventManager* em) override {
+        Process::setup(em);
         setBehavior(new MotorOffBehavior());
     }
 

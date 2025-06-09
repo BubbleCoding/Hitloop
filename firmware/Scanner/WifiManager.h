@@ -15,7 +15,8 @@ private:
 public:
     WifiManager(Config& config) : wifiCheckTimer(500), cfg(config) {}
 
-    void setup() override {
+    void setup(EventManager* em) override {
+        Process::setup(em);
         WiFi.begin(cfg.ssid.c_str(), cfg.password.c_str());
         Serial.println("Connecting to WiFi...");
     }

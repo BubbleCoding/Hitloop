@@ -38,7 +38,8 @@ public:
         readTimer(100) // Read every 100ms
     {}
 
-    void setup() override {
+    void setup(EventManager* em) override {
+        Process::setup(em);
         // The LIS2DH12 library uses Wire, so it should be initialized.
         // It's often safe to call Wire.begin() multiple times.
         Wire.begin(); 

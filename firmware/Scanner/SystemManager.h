@@ -13,16 +13,19 @@ private:
     Timer debounceTimer;
     int lastButtonState;
     int currentButtonState;
+    Timer configCheckTimer;
 
 public:
     SystemManager(Config& config) : 
         cfg(config), 
         debounceTimer(50), // 50ms debounce delay
         lastButtonState(HIGH),
-        currentButtonState(HIGH)
+        currentButtonState(HIGH),
+        configCheckTimer(500)
     {}
 
-    void setup() override {
+    void setup(EventManager* em) override {
+        Process::setup(em);
         pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
         Serial.println("Press BOOT button (PIN 9) to enter config mode at any time.");
     }

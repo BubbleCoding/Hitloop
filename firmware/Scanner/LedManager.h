@@ -25,7 +25,8 @@ public:
         }
     }
 
-    void setup() override {
+    void setup(EventManager* em) override {
+        Process::setup(em);
         pixels.begin();
         pixels.setBrightness(50); // Don't set too high to avoid high current draw
         setBehavior(new LedsOffBehavior());

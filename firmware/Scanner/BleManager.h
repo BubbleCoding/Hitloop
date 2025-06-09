@@ -7,7 +7,7 @@
 #include "Timer.h"
 #include "config.h"
 #include "WifiManager.h"
-#include "DataManager.h"
+#include "EventManager.h"
 
 // Forward declaration for the global pointer
 class BleManager;
@@ -18,17 +18,17 @@ void scanCompleteCallback(BLEScanResults results);
 
 class BleManager : public Process {
 public:
-    BleManager(WifiManager& wifi, DataManager* data)
+    BleManager(WifiManager& wifi)
         : Process(),
           wifiManager(wifi),
-          dataManager(data),
           scanTimer(SCAN_INTERVAL_MS),
           pBLEScan(nullptr)
     {
         g_bleManager = this; // Assign this instance to the global pointer
     }
 
-    void setup() override {
+    void setup(EventManager* em) override {
+        Process::setup(em);
         BLEDevice::init("");
         pBLEScan = BLEDevice::getScan();
         pBLEScan->setActiveScan(false);
@@ -47,10 +47,11 @@ public:
     // This method is called by the global scanCompleteCallback
     void onScanComplete(BLEScanResults results) {
         Serial.printf("Scan complete! Found %d devices.\n", results.getCount());
-        if (wifiManager.isConnected() && dataManager) {
-            dataManager->processScanResults(results);
+        if (wifiManager.isConnected()) {
+            ScanCompleteEvent event(results);
+            eventManager->publish(event);
         } else {
-            Serial.println("WiFi not connected or DataManager not available, skipping data processing.");
+            Serial.println("WiFi not connected, skipping event publish.");
         }
     }
 
@@ -66,7 +67,6 @@ private:
 
     // Member variables
     WifiManager& wifiManager;
-    DataManager* dataManager;
     Timer scanTimer;
     BLEScan* pBLEScan;
 };
