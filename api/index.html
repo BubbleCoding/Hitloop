@@ -1,0 +1,710 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hitloop Beacon Controller Documentation">
+      
+      
+        <meta name="author" content="Rover Vos, Bas Pijls">
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../control/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.45">
+    
+    
+      
+        <title>API Reference - HitLoop Beacon Controller</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.0253249f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HitLoop Beacon Controller" class="md-header__button md-logo" aria-label="HitLoop Beacon Controller" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 9.85 19.14 7h-.5v3.79L16.35 8.5l-.71.71L18.43 12l-2.79 2.79.71.71 2.29-2.29V17h.5L22 14.15 19.85 12zm-2.36-.94.94.94-.94.94zm.94 5.24-.94.94v-1.88zM9.64 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HitLoop Beacon Controller
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HitLoop Beacon Controller" class="md-nav__button md-logo" aria-label="HitLoop Beacon Controller" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 9.85 19.14 7h-.5v3.79L16.35 8.5l-.71.71L18.43 12l-2.79 2.79.71.71 2.29-2.29V17h.5L22 14.15 19.85 12zm-2.36-.94.94.94-.94.94zm.94 5.24-.94.94v-1.88zM9.64 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3z"/></svg>
+
+    </a>
+    HitLoop Beacon Controller
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hitloop beacon controller
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-post-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. POST /data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-post-configurescanner_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. POST /configure/&lt;scanner_id&gt;
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-get-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. GET /devices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-get-scanners" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. GET /scanners
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-get-reset_devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. GET /reset_devices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-html-page-routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. HTML Page Routes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../control/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Control Page Manual
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../device_configuration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Device Configuration Page
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../firmware/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Flashing the Firmware
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../firmware_architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Firmware Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hardware
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../webserver_architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Webserver Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-post-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. POST /data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-post-configurescanner_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. POST /configure/&lt;scanner_id&gt;
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-get-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. GET /devices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-get-scanners" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. GET /scanners
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-get-reset_devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. GET /reset_devices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-html-page-routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. HTML Page Routes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<div><h1 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">¶</a></h1>
+<p>This document details the API endpoints for the HitLoop server.</p>
+<hr>
+<h3 id="1-post-data">1. <code>POST /data</code><a class="headerlink" href="#1-post-data" title="Permanent link">¶</a></h3>
+<p>This is the primary endpoint used by scanners to report their findings to the server. It’s designed to be flexible and can accept data from both real hardware and the simulation.</p>
+<p><strong>Request Body:</strong></p>
+<p>The request body must be a JSON object.</p>
+<ul>
+<li><code>scanner_id</code> or <code>Scanner name</code> (string, required): The unique identifier of the scanner. The server accepts both keys.</li>
+<li><code>beacons</code> (list or object, optional):</li>
+<li>For <strong>real devices</strong>, this should be a <code>list</code> of beacon objects: <code>[{ "name": "Beacon-A", "rssi": -55 }]</code></li>
+<li>For the <strong>simulation</strong>, this can be an <code>object</code> where keys are beacon names: <code>{ "beacon-NW": { "RSSI": -53, "Beacon name": "NW" } }</code></li>
+<li><code>movement</code> (object or number, optional):</li>
+<li>For <strong>real devices</strong>, this should be an <code>object</code>: <code>{ "avgAngleXZ": 12.3, "avgAngleYZ": -5.1, "totalMovement": 34.8 }</code></li>
+<li>For the <strong>simulation</strong>, this can be a single <code>number</code> representing total movement.</li>
+<li><code>simulated</code> (boolean, optional): If <code>true</code>, the data is not persisted to the database.</li>
+</ul>
+<p><strong>Responses:</strong></p>
+<ul>
+<li><strong>200 OK:</strong> Indicates the data was successfully received. The response body contains commands for the scanner.</li>
+<li><strong>Response Body:</strong><ul>
+<li><code>wait_ms</code> (integer): The number of milliseconds the scanner should wait before its next scan.</li>
+<li><code>led_behavior</code> (object, optional): A new LED behavior configuration, if one is pending for this scanner.</li>
+<li><code>vibration_behavior</code> (object, optional): A new vibration behavior configuration, if one is pending.</li>
+</ul>
+</li>
+<li><strong>400 Bad Request:</strong> Indicates a missing scanner identifier in the payload.</li>
+</ul>
+<hr>
+<h3 id="2-post-configurescanner_id">2. <code>POST /configure/&lt;scanner_id&gt;</code><a class="headerlink" href="#2-post-configurescanner_id" title="Permanent link">¶</a></h3>
+<p>Sets a pending LED or vibration behavior configuration for a specific scanner. The configuration is sent to the scanner the next time it sends data to the <code>/data</code> endpoint.</p>
+<ul>
+<li><code>scanner_id</code> (string, URL parameter): The ID of the scanner to configure.</li>
+</ul>
+<p><strong>Request Body:</strong></p>
+<p>A JSON object containing the behavior to set.</p>
+<ul>
+<li><code>led_behavior</code> (object, optional): The LED behavior configuration.</li>
+<li><code>type</code> (string): The name of the behavior (e.g., “Solid”, “HeartBeat”).</li>
+<li><code>params</code> (object): A key-value map of parameters for the behavior (e.g., <code>color</code>, <code>pulse_duration</code>).</li>
+<li><code>vibration_behavior</code> (object, optional): The vibration behavior configuration.</li>
+</ul>
+<p><strong>Responses:</strong></p>
+<ul>
+<li><strong>200 OK:</strong> The configuration has been successfully stored on the server.</li>
+<li><strong>400 Bad Request:</strong> The request body did not contain any valid behavior configuration.</li>
+</ul>
+<hr>
+<h3 id="3-get-devices">3. <code>GET /devices</code><a class="headerlink" href="#3-get-devices" title="Permanent link">¶</a></h3>
+<p>Returns a unified JSON object of all active devices. This endpoint is designed for live-view pages like the index.</p>
+<p>It works by:
+1. Fetching all recently active <strong>real</strong> devices from the database.
+2. Merging this list with the <strong>in-memory</strong> data, which includes all <strong>simulated</strong> devices.
+3. If a device exists in both, the in-memory data takes precedence, ensuring the view is always current.</p>
+<p><strong>Responses:</strong></p>
+<ul>
+<li><strong>200 OK:</strong> A JSON object where each key is a <code>scanner_id</code>. The value contains the latest known data for that scanner.</li>
+</ul>
+<hr>
+<h3 id="4-get-scanners">4. <code>GET /scanners</code><a class="headerlink" href="#4-get-scanners" title="Permanent link">¶</a></h3>
+<p>Returns a JSON object containing the most recent data for all <strong>real</strong> scanners that have been active within the last 5 minutes. This endpoint <strong>only</strong> queries the database and will not include simulated devices. It is used by the Control page.</p>
+<p><strong>Responses:</strong></p>
+<ul>
+<li><strong>200 OK:</strong></li>
+<li><strong>Response Body:</strong> A JSON object where each key is a <code>scanner_id</code>. The value contains the latest movement data, a list of observed beacons, and the timestamp from the database.</li>
+</ul>
+<hr>
+<h3 id="5-get-reset_devices">5. <code>GET /reset_devices</code><a class="headerlink" href="#5-get-reset_devices" title="Permanent link">¶</a></h3>
+<p>Clears all <strong>in-memory</strong> scanner data and pending device configurations on the server. Note: This does <strong>not</strong> clear the historical data from the database.</p>
+<p><strong>Responses:</strong></p>
+<ul>
+<li><strong>200 OK:</strong> A success message.</li>
+</ul>
+<hr>
+<h3 id="6-html-page-routes">6. HTML Page Routes<a class="headerlink" href="#6-html-page-routes" title="Permanent link">¶</a></h3>
+<p>These routes serve the user-facing web pages.</p>
+<ul>
+<li><strong><code>GET /</code></strong>: Serves the main <code>index.html</code> dashboard, which provides a simple table view of live device data.</li>
+<li><strong><code>GET /control</code></strong>: Serves the main <code>control.html</code> page, which provides the real-time grid view of active scanners and the controls for configuring them.</li>
+<li><strong><code>GET /simulation</code></strong>: Serves the <code>simulation.html</code> page for testing the system with simulated scanner data.</li>
+<li><strong><code>GET /configure_device</code></strong>: Serves the <code>configure_device.html</code> page, which allows setting initial firmware credentials via WebSerial. </li>
+</ul></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2025, HvA Hitloop
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["search.share", "content.code.annotate", "navigation.sections", "content.tabs.link", "content.code.copy"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://code.iconify.design/3/3.0.0/iconify.min.js"></script>
+      
+    
+  </body>
+</html>
