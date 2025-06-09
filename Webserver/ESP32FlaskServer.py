@@ -68,18 +68,21 @@ def index():
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
-    scanner_name = data.get("Scanner name")
+    # Align the key with what the firmware is sending
+    scanner_id = data.get("scanner_id")
     beacons_payload = data.get("beacons")
     movement_payload = data.get("movement")
 
-    if not scanner_name:
-        return jsonify({"status": "error", "message": "Missing 'Scanner name' in payload"}), 400
+    if not scanner_id:
+        # Add logging to see the invalid payload
+        print(f"Received invalid data payload: {data}")
+        return jsonify({"status": "error", "message": "Missing 'scanner_id' in payload"}), 400
 
     # --- Step 1: Store data in the database (if not simulated) ---
     if not data.get("simulated"):
-        scanner = Scanner.query.filter_by(name=scanner_name).first()
+        scanner = Scanner.query.filter_by(name=scanner_id).first()
         if not scanner:
-            scanner = Scanner(name=scanner_name)
+            scanner = Scanner(name=scanner_id)
             db.session.add(scanner)
             db.session.commit()
 
@@ -96,37 +99,39 @@ def receive_data():
                 )
                 db.session.add(movement_record)
 
-        if isinstance(beacons_payload, dict):
-            for beacon_name, beacon_info in beacons_payload.items():
-                rssi = beacon_info.get("RSSI")
-                
-                beacon = Beacon.query.filter_by(name=beacon_name).first()
-                if not beacon:
-                    beacon = Beacon(name=beacon_name)
-                    db.session.add(beacon)
-                    db.session.commit()
-                
-                rssi_record = RssiValue(rssi=rssi, scanner_id=scanner.id, beacon_id=beacon.id)
-                db.session.add(rssi_record)
+        if isinstance(beacons_payload, list): # The firmware now sends a list
+            for beacon_info in beacons_payload:
+                rssi = beacon_info.get("rssi")
+                beacon_name = beacon_info.get("name")
+                if rssi is not None and beacon_name is not None:
+                    beacon = Beacon.query.filter_by(name=beacon_name).first()
+                    if not beacon:
+                        beacon = Beacon(name=beacon_name)
+                        db.session.add(beacon)
+                        db.session.commit()
+                    
+                    rssi_record = RssiValue(rssi=rssi, scanner_id=scanner.id, beacon_id=beacon.id)
+                    db.session.add(rssi_record)
 
         db.session.commit()
 
     # --- Step 2: Update in-memory data for live view ---
-    if scanner_name not in devices_data:
-        devices_data[scanner_name] = {"beacons_observed": {}, "movement": {}}
+    if scanner_id not in devices_data:
+        devices_data[scanner_id] = {"beacons_observed": {}, "movement": {}}
     
-    devices_data[scanner_name]["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    devices_data[scanner_id]["timestamp"] = datetime.utcnow().isoformat() + "Z"
     
     if isinstance(movement_payload, dict):
-        devices_data[scanner_name]["movement"] = movement_payload
+        devices_data[scanner_id]["movement"] = movement_payload
     
-    if isinstance(beacons_payload, dict):
-        devices_data[scanner_name]["beacons_observed"].clear() # Keep the live view current
-        for beacon_key, beacon_info in beacons_payload.items():
-            rssi = beacon_info.get("RSSI")
-            beacon_name = beacon_info.get("Beacon name")
+    if isinstance(beacons_payload, list): # The firmware now sends a list
+        devices_data[scanner_id]["beacons_observed"].clear() # Keep the live view current
+        for beacon_info in beacons_payload:
+            rssi = beacon_info.get("rssi")
+            beacon_name = beacon_info.get("name")
             if rssi is not None and beacon_name is not None:
-                devices_data[scanner_name]["beacons_observed"][beacon_key] = {
+                # Use beacon_name as the key for uniqueness in the live view
+                devices_data[scanner_id]["beacons_observed"][beacon_name] = {
                     "rssi": rssi,
                     "beacon_name": beacon_name,
                     "distance": RSSI_to_distance(rssi)
