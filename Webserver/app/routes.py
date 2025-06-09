@@ -9,6 +9,7 @@ main_bp = Blueprint('main', __name__)
 
 # --- In-memory data store & synchronization ---
 devices_data = {}
+device_configs = {}
 SCAN_INTERVAL_SECONDS = 5
 next_slot_time_ms = int(time.time() * 1000)
 time_lock = Lock()
@@ -108,10 +109,15 @@ def receive_data():
         wait_ms = next_slot_time_ms - current_time_ms
         next_slot_time_ms += SCAN_INTERVAL_SECONDS * 1000
 
+    # Get device-specific configuration or use defaults
+    config = device_configs.get(scanner_id, {})
+    led_behavior = config.get('led_behavior')
+    vibration_behavior = config.get('vibration_behavior')
+
     control_payload = {
         "wait_ms": wait_ms,
-        "led_behavior": {"type": "Breathing", "params": {"color": "#00FF00"}},
-        "vibration_behavior": {"type": "Off", "params": {"intensity": 200, "frequency": 2}}
+        "led_behavior": led_behavior,
+        "vibration_behavior": vibration_behavior
     }
     return jsonify(control_payload), 200
 
@@ -122,6 +128,32 @@ def get_all_devices():
 @main_bp.route('/simulation')
 def simulation_page():
     return render_template('simulation.html')
+
+@main_bp.route('/configure/<string:scanner_id>', methods=['POST'])
+def configure_scanner(scanner_id):
+    """
+    Sets the LED and vibration behavior for a specific scanner.
+    """
+    data = request.json
+    led_behavior = data.get('led_behavior')
+    vibration_behavior = data.get('vibration_behavior')
+
+    if not led_behavior and not vibration_behavior:
+        return jsonify({"status": "error", "message": "No configuration data provided"}), 400
+
+    if scanner_id not in device_configs:
+        device_configs[scanner_id] = {}
+
+    if led_behavior:
+        device_configs[scanner_id]['led_behavior'] = led_behavior
+    if vibration_behavior:
+        device_configs[scanner_id]['vibration_behavior'] = vibration_behavior
+
+    return jsonify({
+        "status": "success",
+        "message": f"Configuration for {scanner_id} updated.",
+        "new_config": device_configs[scanner_id]
+    }), 200
 
 @main_bp.route('/configure_device')
 def configure_device_page():
