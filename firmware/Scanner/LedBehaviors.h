@@ -123,7 +123,10 @@ public:
 
     void setup(Adafruit_NeoPixel& pixels) override {
         LedBehavior::setup(pixels);
+        state = IDLE;
         intervalTimer.reset();
+        this->pixels->clear();
+        this->pixels->show();
     }
 
     void update() override {

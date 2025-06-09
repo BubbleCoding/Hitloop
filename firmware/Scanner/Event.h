@@ -11,6 +11,7 @@ enum EventType {
     EVT_DATA_READY_FOR_HTTP,
     EVT_HTTP_RESPONSE_RECEIVED,
     EVT_WIFI_CONNECTED,
+    EVT_SYNC_TIMER,
     // Add other event types here
 };
 
@@ -45,6 +46,12 @@ struct DataReadyForHttpEvent : Event {
 
 struct WifiConnectedEvent : public Event {
     WifiConnectedEvent() : Event(EVT_WIFI_CONNECTED) {}
+};
+
+struct SyncTimerEvent : public Event {
+    unsigned long wait_ms;
+    SyncTimerEvent(unsigned long wait)
+        : Event(EVT_SYNC_TIMER), wait_ms(wait) {}
 };
 
 #endif 

@@ -29,6 +29,7 @@ public:
 
     void setup(EventManager* em) override {
         Process::setup(em);
+        eventManager->subscribe(EVT_SYNC_TIMER, this);
         BLEDevice::init("");
         pBLEScan = BLEDevice::getScan();
         pBLEScan->setActiveScan(false);
@@ -36,6 +37,15 @@ public:
         pBLEScan->setWindow(BLE_SCAN_WINDOW);
         scanTimer.reset();
         Serial.println("BLE Initialized");
+    }
+
+    void onEvent(Event& event) {
+        if (event.type == EVT_SYNC_TIMER) {
+            SyncTimerEvent& e = static_cast<SyncTimerEvent&>(event);
+            Serial.printf("Syncing scan timer to %lu ms\n", e.wait_ms);
+            scanTimer.interval = e.wait_ms;
+            scanTimer.reset();
+        }
     }
 
     void update() override {

@@ -66,6 +66,12 @@ private:
             return;
         }
 
+        if (doc.containsKey("wait_ms")) {
+            unsigned long wait_ms = doc["wait_ms"].as<unsigned long>();
+            SyncTimerEvent event(wait_ms);
+            eventManager->publish(event);
+        }
+
         if (doc.containsKey("led_behavior")) {
             JsonObject led_config = doc["led_behavior"];
             const char* type = led_config["type"];
