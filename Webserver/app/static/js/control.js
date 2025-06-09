@@ -1,6 +1,6 @@
 let scanners = {};
-const boxSize = 120;
-const padding = 20;
+const boxSize = 60;
+const padding = 10;
 
 // Selection state
 let selectedScanners = new Set();
@@ -121,22 +121,22 @@ function drawScannerBox(scannerBox) {
     noStroke();
     fill(0);
     
-    textSize(14); textStyle(BOLD);
-    text(name, x + w / 2, y + 15);
+    textSize(10); textStyle(BOLD);
+    text(name, x + w / 2, y + 10);
     
-    textSize(11); textStyle(NORMAL);
+    textSize(8); textStyle(NORMAL);
     if (scannerData.movement && Object.keys(scannerData.movement).length > 0) {
         const mov = scannerData.movement;
-        text(`XZ: ${mov.avgAngleXZ.toFixed(1)}`, x + w / 2, y + 40);
-        text(`YZ: ${mov.avgAngleYZ.toFixed(1)}`, x + w / 2, y + 55);
-        text(`Move: ${mov.totalMovement.toFixed(1)}`, x + w / 2, y + 70);
+        text(`XZ: ${mov.avgAngleXZ.toFixed(1)}`, x + w / 2, y + 28);
+        text(`YZ: ${mov.avgAngleYZ.toFixed(1)}`, x + w / 2, y + 38);
+        text(`Move: ${mov.totalMovement.toFixed(1)}`, x + w / 2, y + 48);
     } else {
-        text("No movement data", x + w / 2, y + 55);
+        text("No movement data", x + w / 2, y + 38);
     }
 
     if (scannerData.timestamp) {
-        textSize(10); textStyle(ITALIC);
-        text(new Date(scannerData.timestamp).toLocaleTimeString(), x + w / 2, y + h - 15);
+        textSize(7); textStyle(ITALIC);
+        text(new Date(scannerData.timestamp).toLocaleTimeString(), x + w / 2, y + h - 8);
     }
 }
 
