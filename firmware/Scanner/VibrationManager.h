@@ -3,35 +3,40 @@
 
 #include <Arduino.h>
 #include "Process.h"
-#include "Timer.h"
 #include "config.h"
+#include "VibrationBehaviors.h"
 
 class VibrationManager : public Process {
 public:
-    VibrationManager() : Process(), updateTimer(1000 / 10) { // 10 Hz update rate
+    VibrationManager() : Process(), currentBehavior(nullptr) {
+    }
+
+    ~VibrationManager() {
+        delete currentBehavior;
+    }
+
+    void setBehavior(VibrationBehavior* newBehavior) {
+        if (currentBehavior) {
+            delete currentBehavior;
+        }
+        currentBehavior = newBehavior;
+        if (currentBehavior) {
+            currentBehavior->setup();
+        }
     }
 
     void setup() override {
-        // Set the pin to output mode for analogWrite
-        pinMode(VIBRATION_MOTOR_PIN, OUTPUT);
-        updateTimer.reset();
+        setBehavior(new MotorOffBehavior());
     }
 
     void update() override {
-        if (updateTimer.checkAndReset()) {
-            // Create a pulsing effect using a sine wave
-            // The pulse will have a period of 2 seconds
-            float sine_wave = sin(millis() * 2.0 * PI / 2000.0);
-            
-            // Map the sine wave (-1 to 1) to the PWM duty cycle range (0 to 255)
-            uint8_t dutyCycle = (uint8_t)((sine_wave + 1.0) / 2.0 * 255);
-            
-            analogWrite(VIBRATION_MOTOR_PIN, dutyCycle);
+        if (currentBehavior) {
+            currentBehavior->update();
         }
     }
 
 private:
-    Timer updateTimer;
+    VibrationBehavior* currentBehavior;
 };
 
 #endif // VIBRATION_MANAGER_H 
