@@ -16,7 +16,7 @@ class BehaviorManager : public Process {
 public:
     BehaviorManager(LedManager* led, VibrationManager* vib) 
         : ledManager(led), vibrationManager(vib),
-          ledsOff(), solid(), breathing(0), heartBeat(0,0), cycle(0,0),
+          ledsOff(), solid(), breathing(0), heartBeat(), cycle(0,0),
           motorOff(), constant(0), burst(0,0), pulse(0,0)
     {
         ledBehaviorMap["Off"] = &ledsOff;
@@ -34,7 +34,10 @@ public:
     void setup(EventManager* em) override {
         Process::setup(em);
         eventManager->subscribe(EVT_HTTP_RESPONSE_RECEIVED, this);
-        ledManager->setBehavior(&ledsOff);
+        eventManager->subscribe(EVT_WIFI_CONNECTED, this);
+        
+        breathing.color = 0xFF0000; // Red
+        ledManager->setBehavior(&breathing);
         vibrationManager->setBehavior(&motorOff);
     }
 
@@ -42,6 +45,10 @@ public:
         if (event.type == EVT_HTTP_RESPONSE_RECEIVED) {
             HttpResponseEvent& e = static_cast<HttpResponseEvent&>(event);
             handleServerResponse(e.response);
+        }
+        if (event.type == EVT_WIFI_CONNECTED) {
+            heartBeat.setParams(0x00005500, 1000, 10000); // Green, 1s pulse, 10s interval
+            ledManager->setBehavior(&heartBeat);
         }
     }
 

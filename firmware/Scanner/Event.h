@@ -8,8 +8,10 @@ class Process; // Forward declaration
 
 enum EventType {
     EVT_SCAN_COMPLETE,
+    EVT_DATA_READY_FOR_HTTP,
     EVT_HTTP_RESPONSE_RECEIVED,
-    EVT_DATA_READY_FOR_HTTP
+    EVT_WIFI_CONNECTED,
+    // Add other event types here
 };
 
 // Base class for all events
@@ -39,6 +41,10 @@ struct DataReadyForHttpEvent : Event {
     String jsonData;
     DataReadyForHttpEvent(String data)
         : Event(EVT_DATA_READY_FOR_HTTP), jsonData(data) {}
+};
+
+struct WifiConnectedEvent : public Event {
+    WifiConnectedEvent() : Event(EVT_WIFI_CONNECTED) {}
 };
 
 #endif 
