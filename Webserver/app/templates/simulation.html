@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HitLoop Simulation</title>
-    {% include 'header.html' %}
+{% extends "base.html" %}
+{% block title %}Beacon/Scanner Simulation{% endblock %}
+
+{% block head %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
     <!-- p5.dom.min.js is needed for createSlider, createButton etc. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div id="page-title-container">
-        <h1>Device Simulation</h1>
+        <h1>Hitloop Simulation</h1>
     </div>
     <div id="simulation-container">
         <div id="ui-controls-panel">
@@ -30,5 +28,4 @@
     <script src="{{ url_for('static', filename='js/Beacon.js') }}"></script>
     <script src="{{ url_for('static', filename='js/Scanner.js') }}"></script>
     <script src="{{ url_for('static', filename='js/simulation.js') }}"></script> <!-- Main logic last -->
-</body>
-</html> 
+{% endblock %} 

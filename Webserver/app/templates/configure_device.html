@@ -1,8 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Configure Device</title>
-    {% include 'header.html' %}
+{% extends "base.html" %}
+{% block title %}Configure Device{% endblock %}
+
+{% block head %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
@@ -26,8 +25,9 @@
             max-height: 0;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div id="page-title-container">
         <h1>Configure Device via WebSerial</h1>
     </div>
@@ -35,7 +35,7 @@
     <div id="help-toggle">Show Help ▼</div>
     <div id="help-content" class="hidden">
         <p> Use this interface to configure a scanner device. </p>
-        <div >
+        <div>
             <ul>
                 <li>Connect a device through USB</li>
                 <li>Press the <i>Connect</i> button</li>
@@ -43,42 +43,40 @@
                 <li>Enter values for the settings</li>
                 <li>Press <i>Send Configuration</i></li>
             </ul>
-
             <img src="{{ url_for('static', filename='show_button.png') }}">
         </div>
     </div>
 
     <div id="config-container" class="ui-controls-panel" style="display: flex; flex-direction: column; gap: 15px;">
-        
         <button id="connect-button" class="p5-button">Connect</button>
-
         <div>
             <input type="checkbox" id="erase" name="erase">
             <label for="erase">Erase configuration</label>
         </div>
-
         <div>
             <label for="ssid">SSID:</label><br>
             <input type="text" id="ssid" name="ssid" class="p5-input">
         </div>
-
         <div>
             <label for="password">Password:</label><br>
             <input type="password" id="password" name="password" class="p5-input">
         </div>
-        
         <div>
             <label for="serverUrl">Server URL:</label><br>
             <input type="text" id="serverUrl" name="serverUrl" class="p5-input">
         </div>
-        
-        
-        
-        <button id="send-button" class="p5-button" disabled>Send Configuration</button>
-
-        <div id="serial-output" style="width: 100%; height: 200px; background-color: #222; color: #0f0; font-family: monospace; overflow-y: scroll; padding: 10px; box-sizing: border-box; white-space: pre-wrap;">
-            Serial output will appear here...
+        <div class="form-group">
+            <label for="server-ip">Server IP:</label>
+            <input type="text" id="server-ip" name="server-ip" value="192.168.2.112">
+            <p class="help-text">The IP address of the server to which the device sends data.</p>
         </div>
+        <div class="form-group">
+            <button type="submit" id="send-config">Send Configuration</button>
+        </div>
+    </div>
+
+    <div id="serial-output" style="width: 100%; height: 200px; background-color: #222; color: #0f0; font-family: monospace; overflow-y: scroll; padding: 10px; box-sizing: border-box; white-space: pre-wrap;">
+        Serial output will appear here...
     </div>
 
     <script>
@@ -210,5 +208,4 @@
             });
         });
     </script>
-</body>
-</html> 
+{% endblock %} 

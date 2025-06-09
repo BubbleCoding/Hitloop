@@ -2,11 +2,13 @@ body {
     margin: 0;
     font-family: sans-serif;
     background-color: #e0e0e0; /* Light gray background for the page */
-    display: flex; /* Use flexbox to center content vertically */
-    flex-direction: column; /* Stack title and simulation container */
-    align-items: center; /* Center items horizontally */
+    /* These flex properties were causing the global centering issue. */
+    /* display: flex;  */
+    /* flex-direction: column; */
+    /* align-items: center; */
     min-height: 100vh; /* Ensure body takes full viewport height */
-    padding: 20px; /* Add some padding around the page */
+    /* This padding was overriding the navbar padding from base.html */
+    /* padding: 20px; */ 
     box-sizing: border-box; /* Include padding in width/height calculations */
 }
 
