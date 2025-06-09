@@ -162,11 +162,15 @@ def configure_scanner(scanner_id):
 
 @main_bp.route('/devices', methods=['GET'])
 def get_all_devices():
+    return jsonify(devices_data)
+
+@main_bp.route('/scanners', methods=['GET'])
+def get_all_scanners():
     """
     Returns a list of scanners that were active in the last 5 minutes,
     with their latest movement and beacon data.
     """
-    five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+    five_minutes_ago = datetime.utcnow() - timedelta(seconds=30)
 
     # Subquery for scanners with recent RSSI values
     recent_rssi_scanner_ids = db.session.query(RssiValue.scanner_id).filter(RssiValue.timestamp >= five_minutes_ago).distinct()
