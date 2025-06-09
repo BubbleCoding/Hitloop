@@ -109,16 +109,18 @@ def receive_data():
         wait_ms = next_slot_time_ms - current_time_ms
         next_slot_time_ms += SCAN_INTERVAL_SECONDS * 1000
 
-    # Get device-specific configuration or use defaults
-    config = device_configs.get(scanner_id, {})
-    led_behavior = config.get('led_behavior')
-    vibration_behavior = config.get('vibration_behavior')
-
     control_payload = {
-        "wait_ms": wait_ms,
-        "led_behavior": led_behavior,
-        "vibration_behavior": vibration_behavior
+        "wait_ms": wait_ms
     }
+
+    # If a configuration exists for this device, send it once and then remove it.
+    if scanner_id in device_configs:
+        config_to_send = device_configs.pop(scanner_id)
+        if 'led_behavior' in config_to_send:
+            control_payload['led_behavior'] = config_to_send['led_behavior']
+        if 'vibration_behavior' in config_to_send:
+            control_payload['vibration_behavior'] = config_to_send['vibration_behavior']
+
     return jsonify(control_payload), 200
 
 @main_bp.route('/devices', methods=['GET'])
@@ -161,7 +163,8 @@ def configure_device_page():
 
 @main_bp.route('/reset_devices', methods=['GET'])
 def reset_devices_data():
-    global devices_data
+    global devices_data, device_configs
     devices_data.clear()
-    print("All device data has been cleared.")
-    return jsonify({"status": "success", "message": "All device data cleared."}), 200 
+    device_configs.clear()
+    print("All device data and configurations have been cleared.")
+    return jsonify({"status": "success", "message": "All device data and configurations cleared."}), 200 
