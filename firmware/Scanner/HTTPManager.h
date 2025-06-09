@@ -43,6 +43,8 @@ private:
             eventManager->publish(responseEvent);
         } else {
             Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
+            ServerDisconnectedEvent event;
+            eventManager->publish(event);
         }
 
         http.end();

@@ -12,6 +12,7 @@ enum EventType {
     EVT_HTTP_RESPONSE_RECEIVED,
     EVT_WIFI_CONNECTED,
     EVT_SYNC_TIMER,
+    EVT_SERVER_DISCONNECTED,
     // Add other event types here
 };
 
@@ -52,6 +53,10 @@ struct SyncTimerEvent : public Event {
     unsigned long wait_ms;
     SyncTimerEvent(unsigned long wait)
         : Event(EVT_SYNC_TIMER), wait_ms(wait) {}
+};
+
+struct ServerDisconnectedEvent : public Event {
+    ServerDisconnectedEvent() : Event(EVT_SERVER_DISCONNECTED) {}
 };
 
 #endif 
