@@ -2,8 +2,8 @@
 {% block title %}Configure Device{% endblock %}
 
 {% block head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
+    <script src="{{ url_for('static', filename='libraries/p5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='libraries/p5.sound.min.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
     <style>
         #help-toggle {
@@ -66,11 +66,6 @@
             <input type="text" id="serverUrl" name="serverUrl" class="p5-input">
         </div>
         <div class="form-group">
-            <label for="server-ip">Server IP:</label>
-            <input type="text" id="server-ip" name="server-ip" value="192.168.2.112">
-            <p class="help-text">The IP address of the server to which the device sends data.</p>
-        </div>
-        <div class="form-group">
             <button type="submit" id="send-config">Send Configuration</button>
         </div>
     </div>
@@ -82,7 +77,7 @@
     <script>
         // WebSerial logic will go here
         const connectButton = document.getElementById('connect-button');
-        const sendButton = document.getElementById('send-button');
+        const sendButton = document.getElementById('send-config');
         const serialOutput = document.getElementById('serial-output');
         const eraseCheckbox = document.getElementById('erase');
         const textInputs = [

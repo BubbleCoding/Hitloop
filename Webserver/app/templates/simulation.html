@@ -2,9 +2,9 @@
 {% block title %}Beacon/Scanner Simulation{% endblock %}
 
 {% block head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <script src="{{ url_for('static', filename='libraries/p5.min.js') }}"></script>
     <!-- p5.dom.min.js is needed for createSlider, createButton etc. -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
+    <script src="{{ url_for('static', filename='libraries/p5.sound.min.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/simulation_styles.css') }}">
 {% endblock %}
 
